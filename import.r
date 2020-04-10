@@ -11,7 +11,7 @@ ds_file = paste0("https://s2survey.net/eurofound/?act=", token)
 ds = read.table(
   file=ds_file, encoding="UTF-8",
   header = FALSE, sep = "\t", quote = "\"",
-  dec = ".", row.names = "CASE",
+  dec = ".", #row.names = "CASE",
   col.names = c(
     "CASE","SERIAL","REF","QUESTNNR","MODE","LANGUAGE","STARTED","B001","B002",
     "B003_01","C001_01","C002_01","C003_01","C003_02","C003_03","C003_04","C004_01",
@@ -106,15 +106,6 @@ ds$F018 = factor(ds$F018, levels=c("1","2","3","4"), labels=c("Nord-Vest, Centru
 ds$F019 = factor(ds$F019, levels=c("1","2","3"), labels=c("East Sweden","South Sweden","North Sweden"), ordered=FALSE)
 ds$F020 = factor(ds$F020, levels=c("1","2","3","4","5","6","7","8","9","10","11","12"), labels=c("North East","North West","Yorkshire and the Humber","East Midlands","West Midlands","East of England","Greater London","South East","South West","Wales","Scotland","Northern Ireland"), ordered=FALSE)
 
-
-for (var in c("C003_01", "C003_02", "C003_03", "C003_04")) {
-
-  ds[[var]] <- factor(ds[[var]], levels = c(1,2,3,4,5), 
-                                 labels=c("Strongly agree", "Agree", "Neither agree nor disagree", "Disagree", "Strongly disagree"),
-                                 ordered=TRUE)
-
-}
-
 attr(ds$C001_01,"1") = "1 Very dissatisfied"
 attr(ds$C001_01,"2") = "2"
 attr(ds$C001_01,"3") = "3"
@@ -126,6 +117,7 @@ attr(ds$C001_01,"8") = "8"
 attr(ds$C001_01,"9") = "9"
 attr(ds$C001_01,"10") = "10 Very satisfied"
 attr(ds$C001_01,"-1") = "Don\'t know/ Prefer not to answer"
+
 attr(ds$C002_01,"1") = "1 Very unhappy"
 attr(ds$C002_01,"2") = "2"
 attr(ds$C002_01,"3") = "3"
@@ -138,69 +130,33 @@ attr(ds$C002_01,"9") = "9"
 attr(ds$C002_01,"10") = "10 Very happy"
 attr(ds$C002_01,"-1") = "Don\'t know/ Prefer not to answer"
 
+for (var in c("C003_01", "C003_02", "C003_03", "C003_04")) {
+  
+  ds[[var]] <- factor(ds[[var]], levels = c(1,2,3,4,5), 
+                      labels=c("Strongly agree", "Agree", "Neither agree nor disagree", "Disagree", "Strongly disagree"),
+                      ordered=TRUE)
+  
+}
 
-attr(ds$C004_01,"1") = "Very good"
-attr(ds$C004_01,"2") = "Good"
-attr(ds$C004_01,"3") = "Fair"
-attr(ds$C004_01,"4") = "Bad"
-attr(ds$C004_01,"5") = "Very bad"
-attr(ds$C004_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$C005_01,"1") = "At no time"
-attr(ds$C005_01,"2") = "Some of the time"
-attr(ds$C005_01,"3") = "Less than half of the time"
-attr(ds$C005_01,"4") = "More than half of the time"
-attr(ds$C005_01,"5") = "Most of the time"
-attr(ds$C005_01,"6") = "All of the time"
-attr(ds$C005_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$C005_02,"1") = "At no time"
-attr(ds$C005_02,"2") = "Some of the time"
-attr(ds$C005_02,"3") = "Less than half of the time"
-attr(ds$C005_02,"4") = "More than half of the time"
-attr(ds$C005_02,"5") = "Most of the time"
-attr(ds$C005_02,"6") = "All of the time"
-attr(ds$C005_02,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$C005_03,"1") = "At no time"
-attr(ds$C005_03,"2") = "Some of the time"
-attr(ds$C005_03,"3") = "Less than half of the time"
-attr(ds$C005_03,"4") = "More than half of the time"
-attr(ds$C005_03,"5") = "Most of the time"
-attr(ds$C005_03,"6") = "All of the time"
-attr(ds$C005_03,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$C005_04,"1") = "At no time"
-attr(ds$C005_04,"2") = "Some of the time"
-attr(ds$C005_04,"3") = "Less than half of the time"
-attr(ds$C005_04,"4") = "More than half of the time"
-attr(ds$C005_04,"5") = "Most of the time"
-attr(ds$C005_04,"6") = "All of the time"
-attr(ds$C005_04,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$C005_05,"1") = "At no time"
-attr(ds$C005_05,"2") = "Some of the time"
-attr(ds$C005_05,"3") = "Less than half of the time"
-attr(ds$C005_05,"4") = "More than half of the time"
-attr(ds$C005_05,"5") = "Most of the time"
-attr(ds$C005_05,"6") = "All of the time"
-attr(ds$C005_05,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$C006_01,"1") = "All of the time"
-attr(ds$C006_01,"2") = "Most of the time"
-attr(ds$C006_01,"3") = "More than half of the time"
-attr(ds$C006_01,"4") = "Less than half of the time"
-attr(ds$C006_01,"5") = "Some of the time"
-attr(ds$C006_01,"6") = "At no time"
-attr(ds$C006_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$C006_02,"1") = "All of the time"
-attr(ds$C006_02,"2") = "Most of the time"
-attr(ds$C006_02,"3") = "More than half of the time"
-attr(ds$C006_02,"4") = "Less than half of the time"
-attr(ds$C006_02,"5") = "Some of the time"
-attr(ds$C006_02,"6") = "At no time"
-attr(ds$C006_02,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$C006_03,"1") = "All of the time"
-attr(ds$C006_03,"2") = "Most of the time"
-attr(ds$C006_03,"3") = "More than half of the time"
-attr(ds$C006_03,"4") = "Less than half of the time"
-attr(ds$C006_03,"5") = "Some of the time"
-attr(ds$C006_03,"6") = "At no time"
-attr(ds$C006_03,"-1") = "Don\'t know/ Prefer not to answer"
+ds$C004_01 <- factor(ds$C004_01, levels=c(1,2,3,4,5),
+                                 labels=c("Very good","Good","Fair","Bad","Very bad"))
+
+for (var in c("C005_01","C005_02","C005_03","C005_04","C005_05")) {
+  
+  ds[[var]] <- factor(ds[[var]], levels = c(1,2,3,4,5,6), 
+                      labels=c("At no time", "Some of the time",  "Less than half of the time","More than half of the time", "Most of the time","All of the time"),
+                      ordered=TRUE)
+  
+}
+
+for (var in c("C006_01","C006_02","C006_03")) {
+  
+  ds[[var]] <- factor(ds[[var]], levels = c(1,2,3,4,5,6), 
+                      labels=c("All of the time","Most of the time","More than half of the time","Less than half of the time","Some of the time", "At no time"),
+                      ordered=TRUE)
+  
+}
+
 attr(ds$C007_01,"1") = "1 Do not trust at all"
 attr(ds$C007_01,"2") = "2"
 attr(ds$C007_01,"3") = "3"
@@ -256,141 +212,67 @@ attr(ds$C007_05,"8") = "8"
 attr(ds$C007_05,"9") = "9"
 attr(ds$C007_05,"10") = "10 Trust completely"
 attr(ds$C007_05,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D004_01,"1") = "Always"
-attr(ds$D004_01,"2") = "Most of the time"
-attr(ds$D004_01,"3") = "Sometimes"
-attr(ds$D004_01,"4") = "Rarely"
-attr(ds$D004_01,"5") = "Never"
-attr(ds$D004_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D004_02,"1") = "Always"
-attr(ds$D004_02,"2") = "Most of the time"
-attr(ds$D004_02,"3") = "Sometimes"
-attr(ds$D004_02,"4") = "Rarely"
-attr(ds$D004_02,"5") = "Never"
-attr(ds$D004_02,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D004_03,"1") = "Always"
-attr(ds$D004_03,"2") = "Most of the time"
-attr(ds$D004_03,"3") = "Sometimes"
-attr(ds$D004_03,"4") = "Rarely"
-attr(ds$D004_03,"5") = "Never"
-attr(ds$D004_03,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D004_04,"1") = "Always"
-attr(ds$D004_04,"2") = "Most of the time"
-attr(ds$D004_04,"3") = "Sometimes"
-attr(ds$D004_04,"4") = "Rarely"
-attr(ds$D004_04,"5") = "Never"
-attr(ds$D004_04,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D004_05,"1") = "Always"
-attr(ds$D004_05,"2") = "Most of the time"
-attr(ds$D004_05,"3") = "Sometimes"
-attr(ds$D004_05,"4") = "Rarely"
-attr(ds$D004_05,"5") = "Never"
-attr(ds$D004_05,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D005_01,"1") = "Every day"
-attr(ds$D005_01,"2") = "Every other day"
-attr(ds$D005_01,"3") = "Once or twice a week"
-attr(ds$D005_01,"4") = "Less often"
-attr(ds$D005_01,"5") = "Never"
-attr(ds$D005_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D006_01,"1") = "Daily"
-attr(ds$D006_01,"2") = "Several times a week"
-attr(ds$D006_01,"3") = "Several times a month"
-attr(ds$D006_01,"4") = "Less often"
-attr(ds$D006_01,"5") = "Never"
-attr(ds$D006_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D007_01,"1") = "No"
-attr(ds$D007_01,"2") = "Yes"
-attr(ds$D007_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$D008_01,"1") = "Very likely"
-attr(ds$D008_01,"2") = "Rather likely"
-attr(ds$D008_01,"3") = "Neither likely nor unlikely"
-attr(ds$D008_01,"4") = "Rather unlikely"
-attr(ds$D008_01,"5") = "Very unlikely"
-attr(ds$D008_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E001_01,"1") = "With great difficulty"
-attr(ds$E001_01,"2") = "With difficulty"
-attr(ds$E001_01,"3") = "With some difficulty"
-attr(ds$E001_01,"4") = "Fairly easily"
-attr(ds$E001_01,"5") = "Easily"
-attr(ds$E001_01,"6") = "Very easily"
-attr(ds$E001_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E002_01,"1") = "Yes"
-attr(ds$E002_01,"2") = "No"
-attr(ds$E002_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E002_02,"1") = "Yes"
-attr(ds$E002_02,"2") = "No"
-attr(ds$E002_02,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E003_01,"1") = "Yes"
-attr(ds$E003_01,"2") = "No"
-attr(ds$E003_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E003_02,"1") = "Yes"
-attr(ds$E003_02,"2") = "No"
-attr(ds$E003_02,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E003_03,"1") = "Yes"
-attr(ds$E003_03,"2") = "No"
-attr(ds$E003_03,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E003_04,"1") = "Yes"
-attr(ds$E003_04,"2") = "No"
-attr(ds$E003_04,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E003_05,"1") = "Yes"
-attr(ds$E003_05,"2") = "No"
-attr(ds$E003_05,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E003_06,"1") = "Yes"
-attr(ds$E003_06,"2") = "No"
-attr(ds$E003_06,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E007_01,"1") = "Very likely"
-attr(ds$E007_01,"2") = "Rather likely"
-attr(ds$E007_01,"3") = "Neither likely nor unlikely"
-attr(ds$E007_01,"4") = "Rather unlikely"
-attr(ds$E007_01,"5") = "Very unlikely"
-attr(ds$E007_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E008_01,"1") = "A member of your family/ relative"
-attr(ds$E008_01,"2") = "A friend, neighbour, or someone else, who does not belong to your family/ relatives"
-attr(ds$E008_01,"3") = "A service provider, institution or organisation"
-attr(ds$E008_01,"4") = "Nobody"
-attr(ds$E008_01,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E008_02,"1") = "A member of your family/ relative"
-attr(ds$E008_02,"2") = "A friend, neighbour, or someone else, who does not belong to your family/ relatives"
-attr(ds$E008_02,"3") = "A service provider, institution or organisation"
-attr(ds$E008_02,"4") = "Nobody"
-attr(ds$E008_02,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E008_03,"1") = "A member of your family/ relative"
-attr(ds$E008_03,"2") = "A friend, neighbour, or someone else, who does not belong to your family/ relatives"
-attr(ds$E008_03,"3") = "A service provider, institution or organisation"
-attr(ds$E008_03,"4") = "Nobody"
-attr(ds$E008_03,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E008_04,"1") = "A member of your family/ relative"
-attr(ds$E008_04,"2") = "A friend, neighbour, or someone else, who does not belong to your family/ relatives"
-attr(ds$E008_04,"3") = "A service provider, institution or organisation"
-attr(ds$E008_04,"4") = "Nobody"
-attr(ds$E008_04,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E008_05,"1") = "A member of your family/ relative"
-attr(ds$E008_05,"2") = "A friend, neighbour, or someone else, who does not belong to your family/ relatives"
-attr(ds$E008_05,"3") = "A service provider, institution or organisation"
-attr(ds$E008_05,"4") = "Nobody"
-attr(ds$E008_05,"-1") = "Don\'t know/ Prefer not to answer"
-attr(ds$E008_06,"1") = "A member of your family/ relative"
-attr(ds$E008_06,"2") = "A friend, neighbour, or someone else, who does not belong to your family/ relatives"
-attr(ds$E008_06,"3") = "A service provider, institution or organisation"
-attr(ds$E008_06,"4") = "Nobody"
-attr(ds$E008_06,"-1") = "Don\'t know/ Prefer not to answer"
+
+for (var in c("D004_01","D004_02","D004_03","D004_04","D004_05")) {
+  
+  ds[[var]] <- factor(ds[[var]], levels = c(1,2,3,4,5), 
+                      labels=c("Always","Most of the time","Sometimes","Rarely","Never"),
+                      ordered=TRUE)
+  
+}
+
+ds$D005_01 <- factor(ds$D005_01, levels=c(1,2,3,4,5),
+                                 labels=c("Every day","Every other day","Once or twice a week","Less often","Never"),
+                     ordered=TRUE)
+
+ds$D006_01 <- factor(ds$D006_01, levels=c(1,2,3,4,5),
+                     labels=c("Daily","Several times a week","Several times a month","Less often","Never"),
+                     ordered=TRUE)
+
+ds$D007_01 <- factor(ds$C007_01, levels=c(1,2), labels=c("No","Yes"))
+
+for (var in c("D008_01","E007_01")) {
+
+  ds[[var]] <- factor(ds[[var]], levels=c(1,2,3,4,5), 
+                                   labels=c("Very likely","Rather likely","Neither likely nor unlikely","Rather unlikely","Very unlikely"),
+                       ordered=TRUE)
+
+}
+
+ds$E001_01 <- factor(ds$E001_01, levels=c(1,2,3,4,5,6), 
+                     labels=c("With great difficulty","With difficulty","With some difficulty","Fairly easily","Easily","Very easily"),
+                     ordered=TRUE)
+
+for (var in c("E002_01","E002_02","E003_01","E003_02","E003_03","E003_04","E003_05","E003_06","F002_01","F022_01")) {
+  
+  ds[[var]] <- factor(ds[[var]], levels = c(1,2), 
+                      labels=c("Yes","No"))
+  
+}
+
+for (var in c("E008_01","E008_02","E008_03","E008_04","E008_05","E008_06")) {
+  
+  ds[[var]] <- factor(ds[[var]], levels=c(1,2,3,4), 
+                      labels=c("A member of your family/relative",
+                               "A friend, neighbour, or someone else, who does not belong to your family/relatives",
+                               "A service provider, institution or organisation",
+                               "Nobody"))
+}
+
+
 attr(ds$F001_01a,"F") = "Not checked"
 attr(ds$F001_01a,"T") = "Checked"
-attr(ds$F002_01,"1") = "Yes"
-attr(ds$F002_01,"2") = "No"
-attr(ds$F002_01,"-1") = "Don\'t know/Prefer not to answer"
 attr(ds$F003_01a,"F") = "Not checked"
 attr(ds$F003_01a,"T") = "Checked"
 attr(ds$F003_02a,"F") = "Not checked"
 attr(ds$F003_02a,"T") = "Checked"
-attr(ds$F022_01,"1") = "Yes"
-attr(ds$F022_01,"2") = "No"
+
 attr(ds$FINISHED,"F") = "Canceled"
 attr(ds$FINISHED,"T") = "Finished"
 attr(ds$Q_VIEWER,"F") = "Respondent"
 attr(ds$Q_VIEWER,"T") = "Spectator"
 
-
+comment(ds$CASE) = "Case number"
 comment(ds$SERIAL) = "Serial number (if provided)"
 comment(ds$REF) = "Reference (if provided in link)"
 comment(ds$QUESTNNR) = "Questionnaire that has been used in the interview"
@@ -399,19 +281,19 @@ comment(ds$LANGUAGE) = "Language"
 comment(ds$STARTED) = "Time the interview has started (Europe/Berlin)"
 comment(ds$B001) = "Country"
 comment(ds$B002) = "Gender"
-comment(ds$B003_01) = "Age: Age"
-comment(ds$C001_01) = "Life satisfaction: [No Description] 01"
-comment(ds$C002_01) = "Happiness: [No Description] 01"
+comment(ds$B003_01) = "Age"
+comment(ds$C001_01) = "Life satisfaction"
+comment(ds$C002_01) = "Happiness"
 comment(ds$C003_01) = "Optimism and resilience: I am optimistic about my future"
-comment(ds$C003_02) = "Optimism and resilience: I am optimistic about my children\'s or grandchildren\'s future"
+comment(ds$C003_02) = "Optimism and resilience: I am optimistic about my children's or grandchildren's future"
 comment(ds$C003_03) = "Optimism and resilience: I find it difficult to deal with important problems that come up in my life"
 comment(ds$C003_04) = "Optimism and resilience: When things go wrong in my life, it generally takes me a long time to get back to normal"
-comment(ds$C004_01) = "Health: [No Description] 01"
-comment(ds$C005_01) = "WHO-5: I have felt cheerful and in good spirits (reversed)"
-comment(ds$C005_02) = "WHO-5: I have felt calm and relaxed (reversed)"
-comment(ds$C005_03) = "WHO-5: I have felt active and vigorous (reversed)"
-comment(ds$C005_04) = "WHO-5: I woke up feeling fresh and rested (reversed)"
-comment(ds$C005_05) = "WHO-5: My daily life has been filled with things that interest me (reversed)"
+comment(ds$C004_01) = "Health"
+comment(ds$C005_01) = "WHO-5: I have felt cheerful and in good spirits"
+comment(ds$C005_02) = "WHO-5: I have felt calm and relaxed"
+comment(ds$C005_03) = "WHO-5: I have felt active and vigorous"
+comment(ds$C005_04) = "WHO-5: I woke up feeling fresh and rested"
+comment(ds$C005_05) = "WHO-5: My daily life has been filled with things that interest me"
 comment(ds$C006_01) = "Negative affect: I have felt particularly tense"
 comment(ds$C006_02) = "Negative affect: I have felt lonely"
 comment(ds$C006_03) = "Negative affect: I have felt downhearted and depressed"
@@ -429,11 +311,11 @@ comment(ds$D004_02) = "Work-life balance: Felt too tired after work to do some o
 comment(ds$D004_03) = "Work-life balance: Found that your job prevented you from giving the time you wanted to your family"
 comment(ds$D004_04) = "Work-life balance: Found it difficult to concentrate on your job because of your family responsibilities"
 comment(ds$D004_05) = "Work-life balance: Found that your family responsibilities prevented you from giving the time you should to your job"
-comment(ds$D005_01) = "Work in free time: [No Description] 01"
-comment(ds$D006_01) = "Telework 1: [No Description] 01"
-comment(ds$D007_01) = "Telework 2: [No Description] 01 (reversed)"
-comment(ds$D008_01) = "Job security: [No Description] 01"
-comment(ds$E001_01) = "Make ends meet: [No Description] 01 (reversed)"
+comment(ds$D005_01) = "Over the last 2 weeks, how often have you worked in your free time to meet work demands?"
+comment(ds$D006_01) = "How frequently did you work from home before the outbreak of Covid-19?"
+comment(ds$D007_01) = "Have you started to work from home as a result of the COVID-19 situation?"
+comment(ds$D008_01) = "how likely or unlikely do you think it is that you might lose your job in the next 3 months?"
+comment(ds$E001_01) = "Is your household able to make ends meet?"
 comment(ds$E002_01) = "Economising: Gone without fresh fruit and vegetables"
 comment(ds$E002_02) = "Economising: Bought cheaper cuts of meat or bought less than wanted"
 comment(ds$E003_01) = "Arrears: Rent or mortgage payments for accommodation"
@@ -442,19 +324,19 @@ comment(ds$E003_03) = "Arrears: Payments related to consumer loans, including cr
 comment(ds$E003_04) = "Arrears: Telephone, mobile or internet connection bills"
 comment(ds$E003_05) = "Arrears: Payments related to informal loans from friends or relatives not living in your household"
 comment(ds$E003_06) = "Arrears: Payments for healthcare or health insurance"
-comment(ds$E004) = "Finances 3 months ago"
-comment(ds$E005) = "Finances in 3 months"
-comment(ds$E006) = "SILC"
-comment(ds$E007_01) = "Housing security: [No Description] 01"
+comment(ds$E004) = "Financial situation of household 3 months ago"
+comment(ds$E005) = "Financial situation of household in 3 months"
+comment(ds$E006) = "If your household would not receive any income, how long would your household be able to maintain the same standard of living using savings?"
+comment(ds$E007_01) = "How likely or unlikely do you think it is that you will need to leave your accommodation within the next 6 months because you can no longer afford it?"
 comment(ds$E008_01) = "Support: If you needed help around the house when ill"
 comment(ds$E008_02) = "Support: If you needed advice about a serious personal or family matter"
 comment(ds$E008_03) = "Support: If you needed help when looking for a job"
 comment(ds$E008_04) = "Support: If you were feeling a bit depressed and wanting someone to talk to"
 comment(ds$E008_05) = "Support: If you needed help in looking after your children"
 comment(ds$E008_06) = "Support: If you needed help with shopping"
-comment(ds$F001_01) = "Household size: [01]"
-comment(ds$F001_01a) = "Household size: [01]: Don\'t know/Prefer not to answer"
-comment(ds$F002_01) = "Partner: [No Description] 01"
+comment(ds$F001_01) = "Household size"
+comment(ds$F001_01a) = "Household size: Don\'t know/Prefer not to answer"
+comment(ds$F002_01) = "Partner"
 comment(ds$F003_01) = "Number of children: Age 0-11"
 comment(ds$F003_01a) = "Number of children: Age 0-11: Don\'t know/Prefer not to answer"
 comment(ds$F003_02) = "Number of children: Age 12-17"
@@ -514,7 +396,6 @@ comment(ds$Q_VIEWER) = "Did the respondent only view the questionnaire, omitting
 comment(ds$LASTPAGE) = "Last page that the participant has handled in the questionnaire"
 comment(ds$MAXPAGE) = "Hindmost page handled by the participant"
 
-
 #Getting list of all numeric variables
 nums <- unlist(lapply(ds, is.numeric))  
 num_vars <- names(nums[nums==TRUE])
@@ -525,8 +406,6 @@ for (var in num_vars) {
   ds[var][ds[var]==-1 | ds[var]==-9] <- NA
   
 }
-
-
 
 # Assure that the comments are retained in subsets
 as.data.frame.avector = as.data.frame.vector
