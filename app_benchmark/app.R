@@ -1,5 +1,7 @@
 library(shiny)
 
+source("import.r")
+
 ############## User interface #############
 ui <- fluidPage(
   
@@ -22,3 +24,4 @@ server <- function(input, output, session) {
   }
 
 shinyApp(ui,server)
+
