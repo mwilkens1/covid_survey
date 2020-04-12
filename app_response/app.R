@@ -96,7 +96,7 @@ server <- function(input, output, session) {
   output$total <- renderTable({
     
     data <- ds %>% 
-      select(CASE, FINISHED)
+      select(FINISHED)
     data$Finished[ds$FINISHED==TRUE] <- "Full"
     data$Finished[ds$FINISHED==FALSE] <- "Partial"
     
