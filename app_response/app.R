@@ -77,7 +77,8 @@ server <- function(input, output, session) {
     fig <- fig %>% add_trace(data=data[data$Var2==FALSE,], y = ~Freq, name = 'Partial')
     fig <- fig %>% layout(yaxis=list(title="Responses", hoverformat='.0f'),
                           xaxis=list(title=NA), barmode="stack",
-                          title=list(text="Response by country", x = 0))
+                          title=list(text="Response by country", x = 0),
+                          hovermode = 'compare')
 
   })
   
@@ -89,7 +90,8 @@ server <- function(input, output, session) {
     fig <- fig %>% add_trace(data=data[data$Var2==FALSE,], y = ~Freq, name = 'Partial')
     fig <- fig %>% layout(yaxis=list(title="Responses", hoverformat='.0f'),
                           xaxis=list(title=NA), barmode="stack",
-                          title=list(text="Response by date", x = 0))
+                          title=list(text="Response by date", x = 0),
+                          hovermode = 'compare')
     
   })
   
