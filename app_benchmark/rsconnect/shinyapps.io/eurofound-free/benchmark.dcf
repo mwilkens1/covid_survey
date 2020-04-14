@@ -1,0 +1,10 @@
+name: benchmark
+title: benchmark
+username:
+account: eurofound-free
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2115221
+bundleId: 3012766
+url: https://eurofound-free.shinyapps.io/benchmark/
+when: 1586885151.78369
