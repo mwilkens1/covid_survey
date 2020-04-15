@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyWidgets)
 library(plotly)
 library(tidyr)
 library(dplyr)
@@ -63,12 +64,20 @@ ui <- fluidPage( style = 'width:1200px;',
 
 ############# Server #############
 server <- function(input, output, session) {
-
-  source("import.r")
-  
+ 
+  progressSweetAlert(
+    session = session, id = "load_data",
+    title = "Fetching data",
+    display_pct = TRUE, value = 0
+  )
+   
+  source("import.r", local=TRUE)
+    
   levels(ds$B001)[c(28:56,58:60)] <- "Other country"
   ds$date <- format(as.Date(ds$STARTED),format='%d-%m')
-  
+ 
+  closeSweetAlert(session = session)
+
   output$country <- renderPlotly({
     
     data <- data.frame(table(ds$B001,ds$FINISHED))

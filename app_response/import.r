@@ -17,6 +17,12 @@ for (var in vars[2:length(vars)]) {
 
 ds_file = paste0("https://s2survey.net/eurofound/?act=", token,"&vList=",varlist)
 
+updateProgressBar(
+  session = session,
+  id = "load_data",
+  value = 25
+)
+
 # Reading in the data. 
 ds = read.table(
   file=ds_file, encoding="UTF-8",
@@ -37,6 +43,12 @@ ds = read.table(
 
 rm(ds_file)
 
+updateProgressBar(
+  session = session,
+  id = "load_data",
+  value = 75
+)
+
 attr(ds, "project") = "eurofound"
 attr(ds, "description") = "Eurofound e-survey Living, working and COVID-19 "
 attr(ds, "date") = Sys.time()
@@ -47,6 +59,13 @@ ds$B001 = factor(ds$B001, levels=c("1","2","3","4","5","6","7","8","9","10","11"
 ds$B002 = factor(ds$B002, levels=c("1","2","3"), labels=c("Male","Female","In another way"), ordered=FALSE)
 ds$D001 = factor(ds$D001, levels=c("1","2","3","4","5","6","7","8"), labels=c("Employee","Self-employed with employees","Self-employed without employees","Unemployed","Unable to work due to long-term illness or disability","Retired","Full-time homemaker/fulfilling domestic tasks","Student"), ordered=FALSE)
 ds$F004 = factor(ds$F004, levels=c("1","2","3"), labels=c("Primary education","Secondary education","Tertiary education"), ordered=TRUE)
+
+updateProgressBar(
+  session = session,
+  id = "load_data",
+  value = 80
+)
+
 
 attr(ds$FINISHED,"F") = "Canceled"
 attr(ds$FINISHED,"T") = "Finished"
@@ -62,6 +81,12 @@ comment(ds$F021) = "Person ID (SERIAL)"
 comment(ds$TIME_SUM) = "Time spent overall (except outliers)"
 comment(ds$FINISHED) = "Has the interview been finished (reached last page)?"
 
+updateProgressBar(
+  session = session,
+  id = "load_data",
+  value = 90
+)
+
 #Getting list of all numeric variables
 nums <- unlist(lapply(ds, is.numeric))  
 num_vars <- names(nums[nums==TRUE])
@@ -72,3 +97,9 @@ for (var in num_vars) {
   ds[var][ds[var]==-1 | ds[var]==-9] <- NA
   
 }
+
+updateProgressBar(
+  session = session,
+  id = "load_data",
+  value = 100
+)
