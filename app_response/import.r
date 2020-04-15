@@ -60,13 +60,6 @@ ds$B002 = factor(ds$B002, levels=c("1","2","3"), labels=c("Male","Female","In an
 ds$D001 = factor(ds$D001, levels=c("1","2","3","4","5","6","7","8"), labels=c("Employee","Self-employed with employees","Self-employed without employees","Unemployed","Unable to work due to long-term illness or disability","Retired","Full-time homemaker/fulfilling domestic tasks","Student"), ordered=FALSE)
 ds$F004 = factor(ds$F004, levels=c("1","2","3"), labels=c("Primary education","Secondary education","Tertiary education"), ordered=TRUE)
 
-updateProgressBar(
-  session = session,
-  id = "load_data",
-  value = 80
-)
-
-
 attr(ds$FINISHED,"F") = "Canceled"
 attr(ds$FINISHED,"T") = "Finished"
 
@@ -98,8 +91,3 @@ for (var in num_vars) {
   
 }
 
-updateProgressBar(
-  session = session,
-  id = "load_data",
-  value = 100
-)

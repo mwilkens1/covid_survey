@@ -76,7 +76,7 @@ server <- function(input, output, session) {
   levels(ds$B001)[c(28:56,58:60)] <- "Other country"
   ds$date <- format(as.Date(ds$STARTED),format='%d-%m')
  
-  closeSweetAlert(session = session)
+  
 
   output$country <- renderPlotly({
     
@@ -147,6 +147,12 @@ server <- function(input, output, session) {
   
   output$email <- renderText(table(!is.na(ds$F021))[2])
   
+  updateProgressBar(
+    session = session,
+    id = "load_data",
+    value = 95
+  )
+  
   output$empstat <- renderTable({
     
     data <- ds %>% 
@@ -202,6 +208,8 @@ server <- function(input, output, session) {
     paste("Survey response at:",
     format(Sys.time(),tz="Etc/GMT-1"))
   )
+ 
+  closeSweetAlert(session = session) 
   
 }
 
