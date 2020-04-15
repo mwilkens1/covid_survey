@@ -80,6 +80,7 @@ attr(ds, "server") = "https://s2survey.net"
 
 # Variable und Value Labels
 ds$B001 = factor(ds$B001, levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60"), labels=c("Austria","Belgium","Bulgaria","Croatia","Republic of Cyprus","Czechia","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden","Albania","Bosnia and Herzegovina","Brazil","Canada","China","Colombia","Ecuador","Egypt","India","Indonesia","Iran","Japan","Mexico","Montenegro","Morocco","Netherlands Antilles","Nigeria","North Macedonia","Pakistan","Philippines","Russia","Republic of Serbia","South Korea","Switzerland","Suriname","Syria","Thailand","Turkey","Ukraine","United Kingdom","United States","Vietnam","Other country"), ordered=FALSE)
+levels(ds$B001)[c(28:56,58:60)] <- "Other country"
 ds$B002 = factor(ds$B002, levels=c("1","2","3"), labels=c("Male","Female","In another way"), ordered=FALSE)
 ds$C008 = factor(ds$C008, levels=c("1","2","3","4"), labels=c("The open countryside","A village/small town","A medium to large town","A city or city suburb"), ordered=FALSE)
 ds$D001 = factor(ds$D001, levels=c("1","2","3","4","5","6","7","8"), labels=c("Employee","Self-employed with employees","Self-employed without employees","Unemployed","Unable to work due to long-term illness or disability","Retired","Full-time homemaker/fulfilling domestic tasks","Student"), ordered=FALSE)
@@ -425,9 +426,17 @@ make_varnames_list <- function(section) {
 
 }
 
+ds$age_group[ds$B003_01<35] <- "Under 35"
+ds$age_group[ds$B003_01>=35 & ds$B003_01<50] <- "35 - 49"
+ds$age_group[ds$B003_01>50] <- "50 and over"
+ds$age_group <- factor(ds$age_group, levels=c("Under 35","35 - 49","50 and over"), ordered=TRUE)
+
 varnames <- lapply(c("C0","D0","E0"),make_varnames_list)
 names(varnames) <- c("Quality of life","Work and teleworking","Financial situation")
 
-save(varnames, file="data/varnames.rda")
+#Removing a few
+varnames[['Work and teleworking']][['Employment status']] <- NULL
+varnames[['Quality of life']][['Urbanisation']] <- NULL
 
+save(varnames, file="data/varnames.rda")
 save(ds, file="data/ds.Rda")
