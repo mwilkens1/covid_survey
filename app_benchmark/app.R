@@ -1,5 +1,8 @@
 library(shiny)
 library(plotly)
+library(ggplot2)
+
+#setwd(paste0(getwd(),"/app_benchmark"))
 
 # This sources a function that will get 1 row of data from the API: the data
 # of the respondent who just filled in the survey or who got an email with a
@@ -8,6 +11,10 @@ source("get_respondent_data.R")
 
 # This is the full dataset that is loaded into the server
 load("data/ds.Rda")
+
+ds$w[ds$B002=="Male"] <- 3 
+ds$w[ds$B002=="Female"] <- 0.5
+ds$w[ds$B002=="In another way"] <- 0.5
 
 # This is a list of 3 lists of variable names and labels
 load("data/varnames.rda")
@@ -45,6 +52,8 @@ ui <- fillPage(
                    selectInput("var_qol", label = "Select question",
                              choices = varnames["Quality of life"],
                              width = "100%"),
+                   
+                   h2(textOutput("title_qol")),
                  
                    plotlyOutput("plot_qol"),
                   
@@ -61,6 +70,8 @@ ui <- fillPage(
                    selectInput("var_work", label = "Select question",
                                choices = varnames["Work and teleworking"],
                                width = "100%"),
+                   
+                   h2(textOutput("title_work")),
                  
                    plotlyOutput("plot_work"),
                    
@@ -77,6 +88,8 @@ ui <- fillPage(
                    selectInput("var_fin", label = "Select question",
                                choices = varnames["Financial situation"],
                                width = "100%"),
+                   
+                   h2(textOutput("title_fin")),
 
                    plotlyOutput("plot_fin"),
                    
@@ -111,6 +124,37 @@ server <- function(input, output, session) {
     
   })
   
+  #Function for creating the title
+  make_title <- function(inputvar) {
+    
+    comment(ds[[inputvar]])
+    
+  }
+  
+  #Function for creating a plot
+  make_plot <- function(inputvar) {
+    
+    p <- ds %>% 
+      select(!!inputvar, w) %>%
+      filter(!is.na(!!sym(inputvar))) %>%
+      mutate(!!inputvar := as.factor(!!sym(inputvar))) %>%
+      
+      ggplot(aes(x = !!sym(inputvar), 
+                 y = (..count..)/sum(..count..) * 100, 
+                 weight = w,
+                 text = paste0(round((..count..)/sum(..count..)*100,0),"%"))) + 
+      geom_bar(fill="blue") +
+      scale_y_continuous(expand = c(0,0)) + 
+      ylab("%") + xlab(NULL) +
+      theme_bw() +
+      theme(panel.border = element_blank(),
+            panel.grid.major.x = element_blank(),
+            axis.ticks = element_blank())
+    
+    ggplotly(p, tooltip="text")
+
+  }
+  
   #Function for creating the benchmark text
   benchmark_text <- function(inputvar) {
     
@@ -125,24 +169,27 @@ server <- function(input, output, session) {
     
   }
   
-  #Function for creating a plot
-  make_plot <- function(inputvar) {
-    
-    plot_ly(data=ds, x=inputvar)
-    
-  }
-  
-  #Calling the benchmark_text function to render the text for each section
-  output$text_qol <- renderText(benchmark_text(input$var_qol))
-  output$text_work <- renderText(benchmark_text(input$var_work))
-  output$text_fin <- renderText(benchmark_text(input$var_fin))
+  output$title_qol <- renderText(make_title(input$var_qol))
+  output$title_work <- renderText(make_title(input$var_work))
+  output$title_fin <- renderText(make_title(input$var_fin))
   
   #Calling the make_plot function to render the plot for each section
   output$plot_qol <- renderPlotly(make_plot(input$var_qol))
   output$plot_work <- renderPlotly(make_plot(input$var_work))
   output$plot_fin <- renderPlotly(make_plot(input$var_fin))
 
+  #Calling the benchmark_text function to render the text for each section
+  output$text_qol <- renderText(benchmark_text(input$var_qol))
+  output$text_work <- renderText(benchmark_text(input$var_work))
+  output$text_fin <- renderText(benchmark_text(input$var_fin))
+  
 }
 
-shinyApp(ui,server)
-#runApp(list(ui=ui,server=server),launch.browser = TRUE)
+#shinyApp(ui,server)
+runApp(list(ui=ui,server=server),launch.browser = TRUE)
+
+
+
+
+
+
