@@ -3,7 +3,7 @@
 #Quality of life, Work and teleworking and Financial situation.
 make_panel <- function(panel_title,panel_code) {
   
-  tabPanel(title=panel_title, style=tabpanel_style,
+  tabPanel(title=panel_title, style="padding:20px;",
            
            fluidRow(
              

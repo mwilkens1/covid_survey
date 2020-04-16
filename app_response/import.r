@@ -6,7 +6,7 @@
 # API link of the SocSci database of the Eurofound survey. API token is confidential and stored in secrets file.
 source("secrets.R")
 
-vars <- c("STARTED","B003_01","TIME_SUM","B001","FINISHED","F021","D001","B002","F004")
+vars <- c("CASE","STARTED","B003_01","TIME_SUM","B001","FINISHED","F021","D001","B002","F004","LASTPAGE")
 
 varlist <- vars[1]
 for (var in vars[2:length(vars)]) {
@@ -31,8 +31,8 @@ ds = read.table(
   col.names = vars,
   as.is = TRUE,
   colClasses = c(
-    STARTED="POSIXct", B001="numeric",B002="numeric", B003_01="numeric",D001="numeric",
-    F004="numeric", F021="character",TIME_SUM="integer",FINISHED="logical"
+    CASE="numeric",STARTED="POSIXct", B001="numeric",B002="numeric", B003_01="numeric",D001="numeric",
+    F004="numeric", F021="character",TIME_SUM="integer",FINISHED="logical", LASTPAGE="numeric"
   ),
   skip = 1,
   check.names = TRUE, fill = TRUE,
@@ -63,6 +63,7 @@ ds$F004 = factor(ds$F004, levels=c("1","2","3"), labels=c("Primary education","S
 attr(ds$FINISHED,"F") = "Canceled"
 attr(ds$FINISHED,"T") = "Finished"
 
+comment(ds$CASE) = "Case number"
 comment(ds$STARTED) = "Time the interview has started (Europe/Berlin)"
 comment(ds$B001) = "Country"
 comment(ds$B002) = "Gender"
@@ -73,6 +74,7 @@ comment(ds$F021) = "Person ID (SERIAL)"
 
 comment(ds$TIME_SUM) = "Time spent overall (except outliers)"
 comment(ds$FINISHED) = "Has the interview been finished (reached last page)?"
+comment(ds$LASTPAGE) = "Last page that the participant has handled in the questionnaire"
 
 updateProgressBar(
   session = session,
@@ -95,3 +97,9 @@ ds$age_group[ds$B003_01<35] <- "Under 35"
 ds$age_group[ds$B003_01>=35 & ds$B003_01<50] <- "35 - 49"
 ds$age_group[ds$B003_01>50] <- "50 and over"
 ds$age_group <- factor(ds$age_group, levels=c("Under 35","35 - 49","50 and over"), ordered=TRUE)
+
+source("Cleaning_simple.R", local=TRUE)
+
+ds <- ds %>%
+  left_join(ds_clean[c("CASE","clean")], by="CASE")
+ds$clean[is.na(ds$clean)] <- FALSE

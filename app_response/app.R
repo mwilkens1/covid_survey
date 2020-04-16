@@ -12,6 +12,26 @@ ui <- fluidPage( style = 'width:1200px;',
    h1("Eurofound survey: Living, Working and COVID-19"),
    h4(textOutput("extraction_date")),
    br(),
+   
+   fluidRow(
+     column(3,
+       materialSwitch(
+         inputId = "clean",
+         label = "Clean responses only",
+         value = TRUE,
+         status = "primary"
+       )),
+   
+    column(9,
+     materialSwitch(
+       inputId = "email",
+       label = "Email only",
+       value = FALSE,
+       status = "primary"
+     ))
+    ),
+   
+   br(),
                  
    fluidRow(
             
@@ -20,7 +40,7 @@ ui <- fluidPage( style = 'width:1200px;',
       h3("Response:"),
       div(tableOutput('total'), style = "font-size:200%"),
       h3("Emails collected:"),
-      div(textOutput('email'), style = "font-size:200%")
+      div(textOutput('email_count'), style = "font-size:200%")
       
     ),
     
@@ -82,13 +102,15 @@ server <- function(input, output, session) {
   )
    
   source("import.r", local=TRUE)
-    
+  
   levels(ds$B001)[c(28:56,58:60)] <- "Other country"
   ds$date <- format(as.Date(ds$STARTED),format='%d-%m')
  
-  
-
   output$country <- renderPlotly({
+    
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
     
     data <- data.frame(table(ds$B001,ds$FINISHED))
     
@@ -103,6 +125,10 @@ server <- function(input, output, session) {
   
   output$date <- renderPlotly({
     
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
+    
     data <- data.frame(table(ds$date,ds$FINISHED))
     
     fig <- plot_ly(data[data$Var2==TRUE,], x = ~Var1, y = ~Freq, type = 'bar', name = 'Full')
@@ -116,6 +142,10 @@ server <- function(input, output, session) {
   
   output$total <- renderTable({
     
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
+    
     data <- ds %>% 
       select(FINISHED)
     data$Finished[ds$FINISHED==TRUE] <- "Full"
@@ -128,6 +158,10 @@ server <- function(input, output, session) {
   }, colnames = FALSE)
   
   output$time <- renderPlotly({
+    
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
     
     data <- ds %>%
       select(TIME_SUM, FINISHED) %>%
@@ -143,6 +177,10 @@ server <- function(input, output, session) {
   
   output$age <- renderPlotly({
     
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
+    
     data <- ds %>%
       select(B003_01, FINISHED) %>%
       filter(!is.na(B003_01))
@@ -156,6 +194,10 @@ server <- function(input, output, session) {
   })
   
   output$country_gender <- renderPlotly({
+    
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
     
     data <- ds %>%
       select(B001, B002, FINISHED) %>%
@@ -172,6 +214,10 @@ server <- function(input, output, session) {
   })
   
   output$country_age <- renderPlotly({
+    
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
     
     data <- ds %>%
       select(B001, age_group, FINISHED) %>%
@@ -190,6 +236,10 @@ server <- function(input, output, session) {
   
   output$country_education <- renderPlotly({
     
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
+    
     data <- ds %>%
       select(B001, F004, FINISHED) %>%
       filter(!is.na(F004) & FINISHED==TRUE) 
@@ -205,7 +255,14 @@ server <- function(input, output, session) {
                           hovermode = 'compare')
   })
   
-  output$email <- renderText(table(!is.na(ds$F021))[2])
+  output$email_count <- renderText({
+    
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} 
+    
+    table(!is.na(ds$F021))[2]
+    
+    })
   
   updateProgressBar(
     session = session,
@@ -214,6 +271,10 @@ server <- function(input, output, session) {
   )
   
   output$empstat <- renderTable({
+    
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
     
     data <- ds %>% 
       select(D001, FINISHED) %>%
@@ -232,6 +293,10 @@ server <- function(input, output, session) {
   
   output$gender <- renderTable({
     
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
+    
     data <- ds %>% 
       select(B002, FINISHED) %>%
       filter(!is.na(B002))
@@ -248,6 +313,10 @@ server <- function(input, output, session) {
   })
   
   output$education <- renderTable({
+    
+    ds <- ds %>%
+      {if (input$clean==TRUE) filter(.,clean==TRUE) else .} %>%
+      {if (input$email==TRUE) filter(.,!is.na(F021)) else .}
     
     data <- ds %>% 
       select(F004, FINISHED) %>%

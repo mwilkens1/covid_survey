@@ -28,13 +28,10 @@ breakdown_list <- list("Country" = "B001",
                        #Add household type?
                        )
 
-#Some style elements
-tabpanel_style <- "padding:20px;"
-
 #Loading function that creates a panel (tab) in the main body of the app. Because they are all 
 #identical I use a function that I call 3 times. Each tab represents a topic:
 #Quality of life, Work and teleworking and Financial situation.
-source("make_panel.R")
+source("make_panel.R", local=TRUE)
 
 # This function takes the selected variable as an input and creates 
 # a dropdown widget for selecting the category of that factor variable

@@ -475,6 +475,13 @@ ds$emp_stat  <- recode(ds$D001,
                           "Full-time homemaker/fulfilling domestic tasks" = "Other",
                           "Student" = "Other") 
 
+#Cleaning the data
+source("Cleaning_simple.R", local = TRUE)
+
+ds <- ds %>%
+  left_join(ds_clean[c("CASE","clean")], by="CASE")
+ds$clean[is.na(ds$clean)] <- FALSE
+
 save(varnames, file="app_benchmark/data/varnames.rda")
 save(ds, file="app_benchmark/data/ds.Rda")
 
