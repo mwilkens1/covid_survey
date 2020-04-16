@@ -5,7 +5,7 @@
 
 library(dplyr)
 
-setwd("C:/Users/mwi/OneDrive - Eurofound/covid_survey/")
+#setwd("C:/Users/mwi/OneDrive - Eurofound/covid_survey/")
 
 # API link of the SocSci database of the Eurofound survey. API token is confidential and stored in secrets file.
 source("secrets.R")
@@ -412,6 +412,11 @@ for (var in num_vars) {
   ds[var][ds[var]==-1 | ds[var]==-9] <- NA
   
 }
+
+
+### IMPORT UNTIL HERE
+
+
 
 make_varnames_list <- function(section) {
 
