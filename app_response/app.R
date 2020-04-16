@@ -58,6 +58,16 @@ ui <- fluidPage( style = 'width:1200px;',
            plotlyOutput('time', height= "400px")
     )
                     
+  ),
+  
+  br(),
+  
+  fluidRow(
+    
+    plotlyOutput('country_gender', height="400px"),
+    plotlyOutput('country_age', height="400px"),
+    plotlyOutput('country_education', height="400px")
+    
   )
   
 )
@@ -143,6 +153,56 @@ server <- function(input, output, session) {
                           title=list(text="Respondent age", x = 0),
                           showlegend = FALSE)
     
+  })
+  
+  output$country_gender <- renderPlotly({
+    
+    data <- ds %>%
+      select(B001, B002, FINISHED) %>%
+      filter(!is.na(B002) & FINISHED==TRUE)
+    
+    data <- data.frame(table(data$B001,data$B002))
+
+    fig <- plot_ly(data[data$Var2=="Male",], x = ~Var1, y = ~Freq, type = 'bar', name = 'Men')
+    fig <- fig %>% add_trace(data=data[data$Var2=="Female",], y = ~Freq, name = 'Women')
+    fig <- fig %>% layout(yaxis=list(title="Responses", hoverformat='.0f'),
+                          xaxis=list(title=NA), barmode="stack",
+                          title=list(text="Full response by country and gender", x = 0),
+                          hovermode = 'compare')
+  })
+  
+  output$country_age <- renderPlotly({
+    
+    data <- ds %>%
+      select(B001, age_group, FINISHED) %>%
+      filter(!is.na(age_group) & FINISHED==TRUE) 
+    
+    data <- data.frame(table(data$B001,data$age_group))
+    
+    fig <- plot_ly(data[data$Var2=="Under 35",], x = ~Var1, y = ~Freq, type = 'bar', name = 'Under 35')
+    fig <- fig %>% add_trace(data=data[data$Var2=="35 - 49",], y = ~Freq, name = '35 - 49')
+    fig <- fig %>% add_trace(data=data[data$Var2=="50 and over",], y = ~Freq, name = '50 and over')
+    fig <- fig %>% layout(yaxis=list(title="Responses", hoverformat='.0f'),
+                          xaxis=list(title=NA), barmode="stack",
+                          title=list(text="Full response by country and age group", x = 0),
+                          hovermode = 'compare')
+  })
+  
+  output$country_education <- renderPlotly({
+    
+    data <- ds %>%
+      select(B001, F004, FINISHED) %>%
+      filter(!is.na(F004) & FINISHED==TRUE) 
+    
+    data <- data.frame(table(data$B001,data$F004))
+    
+    fig <- plot_ly(data[data$Var2=="Primary education",], x = ~Var1, y = ~Freq, type = 'bar', name = "Primary education")
+    fig <- fig %>% add_trace(data=data[data$Var2=="Secondary education",], y = ~Freq, name = "Secondary education")
+    fig <- fig %>% add_trace(data=data[data$Var2=="Tertiary education",], y = ~Freq, name = "Tertiary education")
+    fig <- fig %>% layout(yaxis=list(title="Responses", hoverformat='.0f'),
+                          xaxis=list(title=NA), barmode="stack",
+                          title=list(text="Full response by country and education", x = 0),
+                          hovermode = 'compare')
   })
   
   output$email <- renderText(table(!is.na(ds$F021))[2])
