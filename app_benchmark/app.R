@@ -75,12 +75,12 @@ ui <- fillPage(theme = shinytheme("cerulean"),
                   
                    #Title of the variable
                    h2(textOutput("title_qol")),
+                   
+                   #Benchmark text (if applicable)
+                   uiOutput("text_qol"),
                  
                    #Plot - withspinner from shinycssloaders
-                   plotlyOutput("plot_qol") %>% withSpinner(),
-                  
-                   #Benchmark text (if applicable)
-                   uiOutput("text_qol")
+                   plotlyOutput("plot_qol") %>% withSpinner()
                  
                  ),
                  
@@ -99,12 +99,13 @@ ui <- fillPage(theme = shinytheme("cerulean"),
                    
                    #Title of the variable
                    h2(textOutput("title_work")),
-                 
-                   #Plot - withspinner from shinycssloaders
-                   plotlyOutput("plot_work") %>% withSpinner(),
                    
                    #Benchmark text (if applicable)
-                   tableOutput("text_work")
+                   uiOutput("text_work"),
+                 
+                   #Plot - withspinner from shinycssloaders
+                   plotlyOutput("plot_work") %>% withSpinner()
+
                  
                  ),
                  
@@ -124,12 +125,12 @@ ui <- fillPage(theme = shinytheme("cerulean"),
                    #Title of the variable
                    h2(textOutput("title_fin")),
 
-                   #Plot - withspinner from shinycssloaders
-                   plotlyOutput("plot_fin") %>% withSpinner(),
-                   
                    #Benchmark text (if applicable)
-                   tableOutput("text_fin")
-                 
+                   uiOutput("text_fin"),
+                   
+                   #Plot - withspinner from shinycssloaders
+                   plotlyOutput("plot_fin") %>% withSpinner()
+                   
                 )
         )
       )    
@@ -171,12 +172,13 @@ server <- function(input, output, session) {
   make_plot <- function(inputvar, country_filter, gender_filter, age_filter) {
     
     p <- ds %>% #Take the dataset
-      select(!!inputvar, w, B001, B002, age_group) %>% #select input variable and weight
-      filter(!is.na(!!sym(inputvar))) %>% # Filter any missing values
+      select(!!inputvar, w, EU27, B001, B002, age_group) %>% #select input variable and weight
+      filter(!is.na(!!sym(inputvar))) %>% # Filter any missing values 
       
-      #Filter by country
-      {if (country_filter!="EU27") filter(., B001 == !!country_filter) else .} %>%
-     
+      #Filter EU27 only or filter by country selected
+      {if (country_filter=="EU27") filter(., EU27 == TRUE) else 
+        filter(., B001 == !!country_filter)} %>% 
+      
       #Filter by gender
       {if (gender_filter!="All") filter(., B002 == !!gender_filter) else .} %>%
       
