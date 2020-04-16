@@ -443,6 +443,21 @@ names(varnames) <- c("Quality of life","Work and teleworking","Financial situati
 varnames[['Work and teleworking']][['Employment status']] <- NULL
 varnames[['Quality of life']][['Urbanisation']] <- NULL
 
+#Geting all factor levels
+
+#Getting list of all factor variables
+factors <- unlist(lapply(ds, is.factor))  
+factor_vars <- names(factors[factors==TRUE])
+
+#For each factor store all levels
+levels_list <- list()
+
+for (var in factor_vars) {
+  
+  levels_list[var] <- list(levels(ds[[var]]))
+  
+}
+
 #Create age groups
 ds$age_group[ds$B003_01<35] <- "Under 35"
 ds$age_group[ds$B003_01>=35 & ds$B003_01<50] <- "35 - 49"
@@ -465,3 +480,4 @@ save(ds, file="app_benchmark/data/ds.Rda")
 
 save(varnames, file="app_web/data/varnames.rda")
 save(ds, file="app_web/data/ds.Rda")
+save(levels_list, file="app_web/data/levels_list.rda")
