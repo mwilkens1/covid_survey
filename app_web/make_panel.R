@@ -1,9 +1,9 @@
 #Function to create a panel (tab) in the main body of the app. Because they are all 
 #identical I use a function that I call 3 times. Each tab represents a topic:
 #Quality of life, Work and teleworking and Financial situation.
-make_panel <- function(panel_title,panel_code) {
+make_panel <- function(panel_title,panel_code,printer) {
   
-  tabPanel(title=panel_title, style="padding:20px;",
+  tabPanel(title=panel_title, style="padding:10px;",
            
            fluidRow(
              
@@ -35,11 +35,13 @@ make_panel <- function(panel_title,panel_code) {
            ),
            
            fluidRow(
-             #Title of the variable
-             h2(textOutput(paste0("title_",panel_code))),
+             
+             plotlyOutput(paste0("plot_",panel_code)) %>% withSpinner(),
+
+             downloadLink(paste0('downloadData_',panel_code), 'Download data')
              
              #Plot - withspinner from shinycssloaders
-             plotlyOutput(paste0("plot_",panel_code)) %>% withSpinner()
+             #plotlyOutput(paste0("plot_",panel_code)) %>% withSpinner()
              
            )
   )

@@ -4,6 +4,7 @@ library(ggplot2)
 library(shinyWidgets)
 library(shinycssloaders)
 library(shinythemes)
+library(dplyr)
 
 #setwd(paste0(getwd(),"/app_web"))
 
@@ -33,16 +34,8 @@ breakdown_list <- list("Country" = "B001",
 #Quality of life, Work and teleworking and Financial situation.
 source("make_panel.R", local=TRUE)
 
-# This function takes the selected variable as an input and creates 
-# a dropdown widget for selecting the category of that factor variable
-# it is called in the server.
-make_cat_selector <- function(inputId, inputvar) {
-    
-    pickerInput(inputId = inputId, label = "Select category", 
-                choices = levels_list[[inputvar]],
-                width = "100%")
-    
-} 
+#Function that calculates the dataset for the plot
+source("make_data.R", local=TRUE)
 
 # Define UI 
 ui <- fillPage(#The app fills the entire page. It will be iframed into the website
@@ -63,10 +56,10 @@ ui <- fillPage(#The app fills the entire page. It will be iframed into the websi
             paste0("var factors = [",vars,"];")
             
         })),
-
+    
     sidebarLayout(#layout with a sidebar and main panel
         
-    sidebarPanel(width=2,#sidebar has 2/12th of full width
+    sidebarPanel(width=3, #sidebar has x/12th of full width 
                  
          # Breakdown widget
          h4("Show by"),
@@ -107,7 +100,7 @@ ui <- fillPage(#The app fills the entire page. It will be iframed into the websi
          ),
          
          pickerInput(inputId = "country_filter", label = "Country", 
-                     choices = c("EU27", levels(ds$B001)),
+                     choices = c("All","EU27", levels(ds$B001)),
                      selected = "EU27",
                      options = list(`live-search` = TRUE),
                      width = "100%"
@@ -120,20 +113,20 @@ ui <- fillPage(#The app fills the entire page. It will be iframed into the websi
          )
     
     ),
-
+    
     # Main panel next to the sidebar
-    mainPanel(width=10,#sidebar has 10/12th of full width
+    mainPanel(width=9,#sidebar has 10/12th of full width
         
         tabsetPanel(#this starts the set of tabs
             
             #First tab
-            make_panel("Quality of life","qol"),
+            make_panel("Quality of life","qol","printer_qol"),
             
             #second tab
-            make_panel("Work and teleworking", "work"),
+            make_panel("Work and teleworking", "work","printer_work"),
             
             #third tab                 
-            make_panel("Financial situation", "fin")
+            make_panel("Financial situation", "fin","printer_fin")
             
         )  
     )
@@ -142,14 +135,110 @@ ui <- fillPage(#The app fills the entire page. It will be iframed into the websi
 
 # Define server 
 server <- function(input, output) {
+    
 
-    #Applying the function to each tab
+    
+    # This function takes the selected variable as an input and creates 
+    # a dropdown widget for selecting the category of that factor variable
+    # it is called in the server.
+    make_cat_selector <- function(inputId, inputvar) {
+        
+         pickerInput(inputId = inputId, label = "Select category", 
+                     choices = levels_list[[inputvar]],
+                     width = "100%")
+ 
+               
+    } 
+    
+    #Applying the category selector function to each tab
     output$cat_selector_qol  <- renderUI(make_cat_selector("cat_sel_qol", input$var_qol)) 
     output$cat_selector_work <- renderUI(make_cat_selector("cat_sel_work",input$var_work)) 
     output$cat_selector_fin  <- renderUI(make_cat_selector("cat_sel_fin", input$var_fin)) 
     
-    # Calculating the data
+    data_qol <- reactive(make_data(input$var_qol, input$breakdown, input$cat_sel_qol, 
+                                   input$gender_filter, input$age_filter, input$education_filter, 
+                                   input$country_filter, input$empstat_filter))
     
+    data_work <- reactive(make_data(input$var_work, input$breakdown, input$cat_sel_work, 
+                                   input$gender_filter, input$age_filter, input$education_filter, 
+                                   input$country_filter, input$empstat_filter))
+    
+    data_fin <- reactive(make_data(input$var_fin, input$breakdown, input$cat_sel_fin, 
+                                   input$gender_filter, input$age_filter, input$education_filter, 
+                                   input$country_filter, input$empstat_filter))
+    
+    # Removing commas from the data for the download data function
+    data_qol_nocommas <- reactive({
+        df <- data_qol()[[1]]
+        colnames(df) <- gsub(",", "_", colnames(df))
+        return(df)
+        })
+    data_work_nocommas <- reactive({
+        df <- data_work()[[1]]
+        colnames(df) <- gsub(",", "_", colnames(df))
+        return(df)
+    })
+    data_fin_nocommas <- reactive({
+        df <- data_fin()[[1]]
+        colnames(df) <- gsub(",", "_", colnames(df))
+        return(df)
+    })
+    
+    # Function for downloading the data
+    downloaddata <- function(data) {
+
+        downloadHandler(
+            filename = 'EF_data.csv',
+            content = function(con) {
+                write.csv(data, con)
+            }
+        )
+    }
+    
+    # Outputs for the download data button
+    output$downloadData_qol <- downloaddata(data_qol_nocommas())
+    output$downloadData_work <- downloaddata(data_work_nocommas())
+    output$downloadData_fin <- downloaddata(data_fin_nocommas())
+
+    #Function for making the plot
+    make_plot <- function(data) {
+        
+        class <- data[[2]]
+        data <- data[[1]]
+        
+        x_label <- colnames(data)[1]
+        colnames(data)[1] <- "x"
+        
+        if (class=="numeric") {
+            y_label <- "Mean"    
+        } else {
+            y_label <- "%"
+        }
+        
+        p <- ggplot(data, aes(x=x, y=Mean,text = round(Mean,1))) +
+            #Type is bar. Using Eurofound color
+            geom_bar(stat="identity", fill="#0D95D0") +
+            #removing white space on the y axis
+            scale_y_continuous(expand = c(0,0)) + 
+            #Setting axis labels
+            ylab(y_label) + xlab(NULL) +
+            #Horizontal orientation
+            coord_flip() +
+            #Applying a theme
+            theme_bw() +
+            #Removing some elements
+            theme(panel.border = element_blank(), #no border around the plot
+                  panel.grid.major.y = element_blank(), #no vertical gridlines
+                  axis.ticks = element_blank()) #no ticks
+        
+        ggplotly(p, tooltip="text")
+        
+    }
+    
+    
+    output$plot_qol <- renderPlotly(make_plot(data_qol()))
+    output$plot_work <- renderPlotly(make_plot(data_work()))
+    output$plot_fin <- renderPlotly(make_plot(data_fin()))
     
 }
 
