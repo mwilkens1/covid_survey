@@ -38,7 +38,7 @@ source("make_panel.R", local=TRUE)
 source("make_data.R", local=TRUE)
 
 # Define UI 
-ui <- fillPage(#The app fills the entire page. It will be iframed into the website
+ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
         
     # This is a little piece of Javascript required for later. 
     tags$head( # refers to the head of the html document
@@ -57,48 +57,57 @@ ui <- fillPage(#The app fills the entire page. It will be iframed into the websi
             
         })),
     
-    sidebarLayout(#layout with a sidebar and main panel
-        
-    sidebarPanel(width=3, #sidebar has x/12th of full width 
-                 
-         # Breakdown widget
-         h4("Show by"),
+     fluidRow(   
          
-         pickerInput(inputId = "breakdown", 
-                     choices = breakdown_list,
-                     selected = "Country",
-                     width = "100%"
-         ),
+        tabsetPanel(#this starts the set of tabs
+            
+            #See 'make_panel.R'
+            
+            #First tab
+            make_panel("Quality of life","qol"),
+            
+            #second tab
+            make_panel("Work and teleworking", "work"),
+            
+            #third tab                 
+            make_panel("Financial situation", "fin")
+            
+        )  
+     ),
+     
+     #Section under the plot for filtering data
+     h3("Filter data"),
+     
+     fluidRow(
          
-         br(),
-         
-         # Filter widgets ----
-         h4("Filter data"),
-         
+         column(3,
          prettyRadioButtons(
              inputId = "gender_filter",
              label = "Gender", 
              fill = TRUE,
              choices = c("All","Male","Female"),
              selected = "All"
-         ),
+         )),
          
+         column(3,
          prettyRadioButtons(
              inputId = "age_filter",
              label = "Age", 
              fill = TRUE,
              choices = c("All",levels(ds$age_group)),
              selected = "All"
-         ),
+         )),
          
+         column(3,
          prettyRadioButtons(
              inputId = "education_filter",
              label = "Education", 
              fill = TRUE,
              choices = c("All",levels(ds$F004)),
              selected = "All"
-         ),
+         )),
          
+         column(3,
          pickerInput(inputId = "country_filter", label = "Country", 
                      choices = c("All","EU27", levels(ds$B001)),
                      selected = "EU27",
@@ -110,33 +119,14 @@ ui <- fillPage(#The app fills the entire page. It will be iframed into the websi
                      choices = c("All", levels(ds$emp_stat)),
                      selected = "All",
                      width = "100%"
-         )
-    
-    ),
-    
-    # Main panel next to the sidebar
-    mainPanel(width=9,#sidebar has 10/12th of full width
-        
-        tabsetPanel(#this starts the set of tabs
-            
-            #First tab
-            make_panel("Quality of life","qol","printer_qol"),
-            
-            #second tab
-            make_panel("Work and teleworking", "work","printer_work"),
-            
-            #third tab                 
-            make_panel("Financial situation", "fin","printer_fin")
-            
-        )  
-    )
-)
+         ))
+         
+     )
+
 )
 
 # Define server 
 server <- function(input, output) {
-    
-
     
     # This function takes the selected variable as an input and creates 
     # a dropdown widget for selecting the category of that factor variable
@@ -155,15 +145,17 @@ server <- function(input, output) {
     output$cat_selector_work <- renderUI(make_cat_selector("cat_sel_work",input$var_work)) 
     output$cat_selector_fin  <- renderUI(make_cat_selector("cat_sel_fin", input$var_fin)) 
     
-    data_qol <- reactive(make_data(input$var_qol, input$breakdown, input$cat_sel_qol, 
+    # Here the make_data function is called ('make_data.R') for each panel
+    # It returns a list of a dataframe and a data class (numeric or factor)
+    data_qol <- reactive(make_data(input$var_qol, input$breakdown_qol, input$cat_sel_qol, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
                                    input$country_filter, input$empstat_filter))
     
-    data_work <- reactive(make_data(input$var_work, input$breakdown, input$cat_sel_work, 
+    data_work <- reactive(make_data(input$var_work, input$breakdown_work, input$cat_sel_work, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
                                    input$country_filter, input$empstat_filter))
     
-    data_fin <- reactive(make_data(input$var_fin, input$breakdown, input$cat_sel_fin, 
+    data_fin <- reactive(make_data(input$var_fin, input$breakdown_fin, input$cat_sel_fin, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
                                    input$country_filter, input$empstat_filter))
     
@@ -203,23 +195,29 @@ server <- function(input, output) {
     #Function for making the plot
     make_plot <- function(data) {
         
+        #Variable class
         class <- data[[2]]
+        #The dataframe
         data <- data[[1]]
         
+        #Saving the label
         x_label <- colnames(data)[1]
+        #Changing the name to x to avoid commas and the like
         colnames(data)[1] <- "x"
         
+        #Setting the axis label depending on the type of variable
         if (class=="numeric") {
             y_label <- "Mean"    
         } else {
             y_label <- "%"
         }
         
+        #Making the plot
         p <- ggplot(data, aes(x=x, y=Mean,text = round(Mean,1))) +
             #Type is bar. Using Eurofound color
             geom_bar(stat="identity", fill="#0D95D0") +
             #removing white space on the y axis
-            scale_y_continuous(expand = c(0,0)) + 
+            scale_y_continuous(expand = c(0.01,0.01)) + 
             #Setting axis labels
             ylab(y_label) + xlab(NULL) +
             #Horizontal orientation
@@ -231,11 +229,12 @@ server <- function(input, output) {
                   panel.grid.major.y = element_blank(), #no vertical gridlines
                   axis.ticks = element_blank()) #no ticks
         
+        # making it interactive
         ggplotly(p, tooltip="text")
         
     }
     
-    
+    #Calling the plot function for each tab
     output$plot_qol <- renderPlotly(make_plot(data_qol()))
     output$plot_work <- renderPlotly(make_plot(data_work()))
     output$plot_fin <- renderPlotly(make_plot(data_fin()))

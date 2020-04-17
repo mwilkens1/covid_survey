@@ -1,21 +1,35 @@
 #Function to create a panel (tab) in the main body of the app. Because they are all 
 #identical I use a function that I call 3 times. Each tab represents a topic:
 #Quality of life, Work and teleworking and Financial situation.
-make_panel <- function(panel_title,panel_code,printer) {
+make_panel <- function(panel_title,panel_code) {
   
   tabPanel(title=panel_title, style="padding:10px;",
            
            fluidRow(
              
              #Question selection
-             column(width=8,
+             column(width=12,
                     pickerInput(inputId = paste0("var_",panel_code), 
                                 label = "Select question", 
                                 choices = varnames[panel_title],
                                 options = list(`live-search` = TRUE),
-                                width = "100%")),
+                                width = "100%"))
+           ),
+           
+           fluidRow(
              
-             column(width=4,
+             column(width=6,
+             
+               # Breakdown widget
+               pickerInput(inputId = paste0("breakdown_",panel_code), 
+                           label = "By",
+                           choices = breakdown_list,
+                           selected = "Country",
+                           width = "100%"
+                           
+             )),
+             
+             column(width=6,
                     #This dropdown only shows if its a factor variable. 
                     # The user is supposed to select a category belonging 
                     # to the variable selected. 
@@ -33,17 +47,17 @@ make_panel <- function(panel_title,panel_code,printer) {
                       uiOutput(paste0('cat_selector_',panel_code))
                     ))
            ),
-           
+             
            fluidRow(
-             
-             plotlyOutput(paste0("plot_",panel_code)) %>% withSpinner(),
-
-             downloadLink(paste0('downloadData_',panel_code), 'Download data')
-             
-             #Plot - withspinner from shinycssloaders
-             #plotlyOutput(paste0("plot_",panel_code)) %>% withSpinner()
-             
+             column(width=12,
+       
+               plotlyOutput(paste0("plot_",panel_code)) %>% withSpinner(),
+               
+               downloadButton(paste0('downloadData_',panel_code), label = "Download data")
+           
+             )
            )
-  )
+         
+    )
   
 }
