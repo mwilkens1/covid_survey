@@ -59,6 +59,8 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
     
      fluidRow(   
          
+       column(12,
+         
         tabsetPanel(#this starts the set of tabs
             
             #See 'make_panel.R'
@@ -73,6 +75,8 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
             make_panel("Financial situation", "fin")
             
         )  
+        
+       )
      ),
      
      #Section under the plot for filtering data
@@ -205,6 +209,9 @@ server <- function(input, output) {
         #Changing the name to x to avoid commas and the like
         colnames(data)[1] <- "x"
         
+        #Calculating the maximum value
+        maxval <- max(data$Mean)
+        
         #Setting the axis label depending on the type of variable
         if (class=="numeric") {
             y_label <- "Mean"    
@@ -217,7 +224,9 @@ server <- function(input, output) {
             #Type is bar. Using Eurofound color
             geom_bar(stat="identity", fill="#0D95D0") +
             #removing white space on the y axis
-            scale_y_continuous(expand = c(0.01,0.01)) + 
+            scale_y_continuous(expand = c(0.01,0.01)) +
+            #Adding 20% whitespace on the y axis
+            expand_limits(y=maxval*1.2) +
             #Setting axis labels
             ylab(y_label) + xlab(NULL) +
             #Horizontal orientation
