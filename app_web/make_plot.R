@@ -44,7 +44,7 @@ make_plot <- function(inputvar, inputcat, data) {
   }
   
   #Add layout elements
-  fig <- fig %>% layout(xaxis = list(title = y_label,
+  fig <- fig %>% layout(xaxis = list(title = x_label,
                                      hoverformat='.1f'), 
                         yaxis=list(title=NA),
                         barmode = 'stack',
