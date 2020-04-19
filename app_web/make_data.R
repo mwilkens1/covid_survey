@@ -19,31 +19,27 @@ make_data <- function(inputvar, breakdown, category,
       #Select needed variables
       select(inputvar_inner, breakdown, B002, age_group, F004, B001, emp_stat, w, EU27) %>%
       #Filter out NA's in inputvar and breakdown
-      filter(!is.na(!!sym(inputvar_inner)), !is.na(!!sym(breakdown)), !is.na(w)) %>%
-      #Apply any filters that have been activated by the user
-      {if (gender_filter!="All") filter(., B002==gender_filter) else .} %>%
-      {if (age_filter!="All") filter(., age_group==age_filter) else .} %>%
-      {if (education_filter!="All") filter(., F004==education_filter) else .} %>%
-      {if (empstat_filter!="All") filter(., emp_stat==empstat_filter) else .} %>%
+      filter(!is.na(!!sym(inputvar_inner)), !is.na(!!sym(breakdown)), !is.na(w))
+    
+    #Calculating the total
+    df_total <- df %>% 
+      # The totals are always EU27
+      filter(EU27==TRUE) 
+    mean_total <- weighted.mean(df_total[[inputvar_inner]], df_total$w)    
+    
+    #Apply any filters that have been activated by the user
+    df <- df %>%
+      filter(B002 %in% gender_filter) %>%
+      filter(age_group %in% age_filter) %>%
+      filter(F004 %in% education_filter) %>%
+      filter(emp_stat %in% empstat_filter) %>%
       #Dropping unused levels
       droplevels() 
     
-    df_total <- df %>% 
-      # If country is the breakdown, the EU27 is always the total
-      # If country is not the breakdown, the filter is still by default EU27
-      # But the user could select 'all' or a single country. The total would reflect that then.
-      {if (breakdown=="B001") filter(., EU27==TRUE) else .} 
-    mean_total <- weighted.mean(df_total[[inputvar_inner]], df_total$w)
-    
-    # Creating a variable label
-    if (breakdown=="B001") label_total <- "EU27" else label_total <- "Total"
-    
-    # Here the country filter is activated because we have the totals we need
     df <- df %>%
-      {if (country_filter!="All") 
-      {if (country_filter=="EU27") filter(., EU27==TRUE) else 
-        filter(., B001==country_filter)} else .} %>%
+      filter(B001 %in% country_filter) %>%
       droplevels()
+      
     
     # Actual calculation
     df <- df %>%
@@ -58,7 +54,7 @@ make_data <- function(inputvar, breakdown, category,
       select(!!label_breakdown, !!cname) %>%
       distinct() %>%
       # Add the total
-      add_row(!!label_breakdown := label_total, !!cname := mean_total)
+      add_row(!!label_breakdown := "Total (EU27)", !!cname := mean_total)
   
     return(df)
     

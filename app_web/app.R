@@ -91,43 +91,44 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
      fluidRow(
          
          column(3,
-         prettyRadioButtons(
+         awesomeCheckboxGroup(
              inputId = "gender_filter",
              label = "Gender", 
-             fill = TRUE,
-             choices = c("All","Male","Female"),
-             selected = "All"
+             choices = levels(ds$B002),
+             selected = levels(ds$B002)
          )),
          
          column(3,
-         prettyRadioButtons(
+         awesomeCheckboxGroup(
              inputId = "age_filter",
              label = "Age", 
-             fill = TRUE,
-             choices = c("All",levels(ds$age_group)),
-             selected = "All"
+             choices = levels(ds$age_group),
+             selected = levels(ds$age_group)
          )),
          
          column(3,
-         prettyRadioButtons(
+         awesomeCheckboxGroup(
              inputId = "education_filter",
              label = "Education", 
-             fill = TRUE,
-             choices = c("All",levels(ds$F004)),
-             selected = "All"
+             choices = levels(ds$F004),
+             selected = levels(ds$F004)
          )),
          
          column(3,
          pickerInput(inputId = "country_filter", label = "Country", 
-                     choices = c("All","EU27", levels(ds$B001)),
-                     selected = "EU27",
-                     options = list(`live-search` = TRUE),
+                     choices = levels(ds$B001),
+                     selected = levels(ds$B001)[1:27],
+                     options = list(`live-search` = TRUE,
+                                    `actions-box` = TRUE),
+                     multiple=TRUE,
                      width = "100%"
          ),
          
          pickerInput(inputId = "empstat_filter", label = "Employment status", 
-                     choices = c("All", levels(ds$emp_stat)),
-                     selected = "All",
+                     choices = levels(ds$emp_stat),
+                     selected = levels(ds$emp_stat),
+                     options = list(`actions-box` = TRUE),
+                     multiple = TRUE,
                      width = "100%"
          ))
          
