@@ -27,7 +27,7 @@ make_panel <- function(panel_title,panel_code) {
                            selected = "Country",
                            width = "100%"
                            
-             )),
+               )),
              
              column(width=6,
                     #This dropdown only shows if its a factor variable. 
@@ -47,17 +47,17 @@ make_panel <- function(panel_title,panel_code) {
                       uiOutput(paste0('cat_selector_',panel_code))
                     ))
            ),
-             
+           
            fluidRow(
              column(width=12,
-       
-               plotlyOutput(paste0("plot_",panel_code)) %>% withSpinner(),
-               
-               downloadButton(paste0('downloadData_',panel_code), label = "Download data")
-           
+                    
+                    plotlyOutput(paste0("plot_",panel_code), height="500px") %>% withSpinner(),
+                    
+                    downloadButton(paste0('downloadData_',panel_code), label = "Download data")
+                    
              )
            )
-         
-    )
+           
+  )
   
 }

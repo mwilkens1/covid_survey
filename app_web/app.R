@@ -1,10 +1,10 @@
 library(shiny)
 library(plotly)
-library(ggplot2)
 library(shinyWidgets)
 library(shinycssloaders)
 library(shinythemes)
 library(dplyr)
+library(purrr)
 
 #setwd(paste0(getwd(),"/app_web"))
 
@@ -36,6 +36,12 @@ source("make_panel.R", local=TRUE)
 
 #Function that calculates the dataset for the plot
 source("make_data.R", local=TRUE)
+
+#Function that creates the plot
+source("make_plot.R", local=TRUE)
+
+#EF colour scheme
+EF_colours <- list("#0D95D0", "#7DC462", "#E72F52", "#774FA0", "#EFB743", "#D44627")
 
 # Define UI 
 ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
@@ -137,8 +143,10 @@ server <- function(input, output) {
     # it is called in the server.
     make_cat_selector <- function(inputId, inputvar) {
         
-         pickerInput(inputId = inputId, label = "Select category", 
+         pickerInput(inputId = inputId, label = "Select categories", 
                      choices = levels_list[[inputvar]],
+                     selected = levels_list[[inputvar]][1],
+                     multiple = TRUE,
                      width = "100%")
  
                
@@ -196,57 +204,10 @@ server <- function(input, output) {
     output$downloadData_work <- downloaddata(data_work_nocommas())
     output$downloadData_fin <- downloaddata(data_fin_nocommas())
 
-    #Function for making the plot
-    make_plot <- function(data) {
-        
-        #Variable class
-        class <- data[[2]]
-        #The dataframe
-        data <- data[[1]]
-        
-        #Saving the label
-        x_label <- colnames(data)[1]
-        #Changing the name to x to avoid commas and the like
-        colnames(data)[1] <- "x"
-        
-        #Calculating the maximum value
-        maxval <- max(data$Mean)
-        
-        #Setting the axis label depending on the type of variable
-        if (class=="numeric") {
-            y_label <- "Mean"    
-        } else {
-            y_label <- "%"
-        }
-        
-        #Making the plot
-        p <- ggplot(data, aes(x=x, y=Mean,text = round(Mean,1))) +
-            #Type is bar. Using Eurofound color
-            geom_bar(stat="identity", fill="#0D95D0") +
-            #removing white space on the y axis
-            scale_y_continuous(expand = c(0.01,0.01)) +
-            #Adding 20% whitespace on the y axis
-            expand_limits(y=maxval*1.2) +
-            #Setting axis labels
-            ylab(y_label) + xlab(NULL) +
-            #Horizontal orientation
-            coord_flip() +
-            #Applying a theme
-            theme_bw() +
-            #Removing some elements
-            theme(panel.border = element_blank(), #no border around the plot
-                  panel.grid.major.y = element_blank(), #no vertical gridlines
-                  axis.ticks = element_blank()) #no ticks
-        
-        # making it interactive
-        ggplotly(p, tooltip="text")
-        
-    }
-    
     #Calling the plot function for each tab
-    output$plot_qol <- renderPlotly(make_plot(data_qol()))
-    output$plot_work <- renderPlotly(make_plot(data_work()))
-    output$plot_fin <- renderPlotly(make_plot(data_fin()))
+    output$plot_qol <- renderPlotly(make_plot(input$var_qol, input$cat_sel_qol, data_qol()))
+    output$plot_work <- renderPlotly(make_plot(input$var_work, input$cat_sel_work, data_work()))
+    output$plot_fin <- renderPlotly(make_plot(input$var_fin, input$cat_sel_fin, data_fin()))
     
 }
 
