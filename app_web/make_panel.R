@@ -18,7 +18,7 @@ make_panel <- function(panel_title,panel_code) {
            
            fluidRow(
              
-             column(width=6,
+             column(width=3,
              
                # Breakdown widget
                pickerInput(inputId = paste0("breakdown_",panel_code), 
@@ -28,32 +28,46 @@ make_panel <- function(panel_title,panel_code) {
                            width = "100%"
                            
                )),
-             
-             column(width=6,
-                    #This dropdown only shows if its a factor variable. 
-                    # The user is supposed to select a category belonging 
-                    # to the variable selected. 
-                    conditionalPanel(
-                      #Here is where the javascript variable comes in. 
-                      #It checks whether the selected variable 
-                      #(input 'var_qol') is in the javascript array. 
-                      #If so, the extra dropdown is visible.
-                      condition = paste0("input.var_",panel_code,
-                                         " && factors.indexOf(input.var_",
-                                         panel_code,") > -1"),
-                      #The extra widget is actually created serverside 
-                      #because it needs the selected question as an 
-                      #input variable. See first part of the server.
-                      uiOutput(paste0('cat_selector_',panel_code))
-                    ))
+           
+           column(width=6,
+                  
+                  #This dropdown only shows if its a factor variable. 
+                  # The user is supposed to select a category belonging 
+                  # to the variable selected. 
+                  conditionalPanel(
+                    #Here is where the javascript variable comes in. 
+                    #It checks whether the selected variable 
+                    #(input 'var_qol') is in the javascript array. 
+                    #If so, the extra dropdown is visible.
+                    condition = paste0("input.var_",panel_code,
+                                       " && factors.indexOf(input.var_",
+                                       panel_code,") > -1"),
+                    #The extra widget is actually created serverside 
+                    #because it needs the selected question as an 
+                    #input variable. See first part of the server.
+                    uiOutput(paste0('cat_selector_',panel_code))
+                    
+                  )),
+           
+           column(width=3,
+                  
+                  conditionalPanel(
+                    condition =  paste0("input.breakdown_",panel_code,
+                                        " == 'B001'"),
+                    pickerInput(inputId = paste0("chart_type_",panel_code), label = "Chart type", 
+                                choices = c("Map","Bar"),
+                                selected = "Map",
+                                width = "100%"))
+                    
+                  )
            ),
            
            fluidRow(
              column(width=12,
+          
+                  uiOutput(paste0('plot_ui_',panel_code)),
                     
-                    plotlyOutput(paste0("plot_",panel_code), height="500px") %>% withSpinner(),
-                    
-                    downloadButton(paste0('downloadData_',panel_code), label = "Download data")
+                  downloadButton(paste0('downloadData_',panel_code), label = "Download data")
                     
              )
            )

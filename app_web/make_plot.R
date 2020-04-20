@@ -1,6 +1,6 @@
 #Function for making the plot
 make_plot <- function(inputvar, inputcat, data) {
-  
+
   # Show a message if for a categorical variable no categories are selected
   validate(
     need(
@@ -13,14 +13,10 @@ make_plot <- function(inputvar, inputcat, data) {
   #The dataframe
   data <- data[[1]]
 
-  colnames(data)[1] <- "bdown"
-  
   #Setting the axis label depending on the type of variable
-  if (class=="numeric") {
-    x_label <- "Mean"    
-  } else {
-    x_label <- "%"
-  }
+  if (class=="numeric") {x_label <- "Mean"} else {x_label <- "%"}
+    
+  colnames(data)[1] <- "bdown"
   
   #Making the plot
   fig <- plot_ly()
@@ -50,7 +46,17 @@ make_plot <- function(inputvar, inputcat, data) {
                         yaxis=list(title=NA, autorange="reversed"),
                         barmode = 'stack',
                         hovermode = 'compare',
-                        colorway=EF_colours)
+                        colorway=EF_colours,
+                        margin = list(r=100),
+                        images = list(list(source = "https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
+                             xref = "paper",
+                             yref = "paper",
+                             x= 1,
+                             y= 0.15,
+                             sizex = 0.15,
+                             sizey = 0.15,
+                             opacity = 0.6))
+                        )
   
   #Removing buttons from the modebar
   fig <- fig %>% config(modeBarButtonsToRemove = c("zoom2d", "zoomIn2d", "zoomOut2d","pan2d",
@@ -58,6 +64,5 @@ make_plot <- function(inputvar, inputcat, data) {
                                                    "toggleSpikelines","hoverClosestCartesian",
                                                    "hoverCompareCartesian"),
                         displaylogo = FALSE)
-  
-
 }
+

@@ -5,6 +5,8 @@ library(shinycssloaders)
 library(shinythemes)
 library(dplyr)
 library(purrr)
+library(leaflet)
+library(leafem)
 
 #setwd(paste0(getwd(),"/app_web"))
 
@@ -19,6 +21,12 @@ load("data/varnames.rda")
 # List of all categories of each factor variable
 load("data/levels_list.rda")
 factors <- names(levels_list)
+
+#List of categories initially selected
+load("data/sel_levels_list.rda")
+
+# Load the shapefile
+load("data/shp_20.rda")
 
 #Creating a list of named breakdowns
 breakdown_list <- list("Country" = "B001",
@@ -39,6 +47,9 @@ source("make_data.R", local=TRUE)
 
 #Function that creates the plot
 source("make_plot.R", local=TRUE)
+
+#Function that creates the map
+source("make_map.R", local=TRUE)
 
 #EF colour scheme
 EF_colours <- list("#0D95D0", "#7DC462", "#E72F52", "#774FA0", "#EFB743", "#D44627")
@@ -86,6 +97,7 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
      ),
      
      #Section under the plot for filtering data
+    
      h3("Filter data"),
      
      fluidRow(
@@ -98,7 +110,7 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
              selected = levels(ds$B002)
          )),
          
-         column(3,
+         column(2,
          awesomeCheckboxGroup(
              inputId = "age_filter",
              label = "Age", 
@@ -106,7 +118,7 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
              selected = levels(ds$age_group)
          )),
          
-         column(3,
+         column(2,
          awesomeCheckboxGroup(
              inputId = "education_filter",
              label = "Education", 
@@ -114,7 +126,7 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
              selected = levels(ds$F004)
          )),
          
-         column(3,
+         column(5,
          pickerInput(inputId = "country_filter", label = "Country", 
                      choices = levels(ds$B001),
                      selected = levels(ds$B001)[1:27],
@@ -144,9 +156,19 @@ server <- function(input, output) {
     # it is called in the server.
     make_cat_selector <- function(inputId, inputvar) {
         
+         #if (length(levels_list[[inputvar]])>2) {
+         
+         #    selected <- levels_list[[inputvar]]
+        
+         #} else {
+             
+             selected <- sel_levels_list[[inputvar]]
+             
+         #}
+             
          pickerInput(inputId = inputId, label = "Select categories", 
                      choices = levels_list[[inputvar]],
-                     selected = levels_list[[inputvar]][1],
+                     selected = selected,
                      multiple = TRUE,
                      width = "100%")
  
@@ -206,9 +228,48 @@ server <- function(input, output) {
     output$downloadData_fin <- downloaddata(data_fin_nocommas())
 
     #Calling the plot function for each tab
+    output$map_qol  <- renderLeaflet(make_map(input$var_qol, input$cat_sel_qol, data_qol()))
     output$plot_qol <- renderPlotly(make_plot(input$var_qol, input$cat_sel_qol, data_qol()))
+    output$map_work  <- renderLeaflet(make_map(input$var_work, input$cat_sel_work, data_work()))
     output$plot_work <- renderPlotly(make_plot(input$var_work, input$cat_sel_work, data_work()))
+    output$map_fin  <- renderLeaflet(make_map(input$var_fin, input$cat_sel_fin, data_fin()))
     output$plot_fin <- renderPlotly(make_plot(input$var_fin, input$cat_sel_fin, data_fin()))
+    
+    make_plot_ui <- function(breakdown, chart_type, mapoutput, plotoutput) {    
+        
+        if (breakdown=="B001" &
+            chart_type=="Map") {
+            
+            leafletOutput(mapoutput, height="600px") %>% withSpinner() 
+            
+        } else {
+            
+            if (breakdown=="B001") {
+                
+                height <- "500px"
+            
+            } else if (breakdown!="emp_stat") {
+                
+                height <- "300px"
+                
+            } else {
+                
+                height <- "400px"
+                
+            }
+            
+            plotlyOutput(plotoutput, height=height) %>% withSpinner()
+            
+        }
+    
+    }
+    
+    output$plot_ui_qol <-  renderUI(make_plot_ui(input$breakdown_qol,  
+                                                 input$chart_type_qol ,"map_qol","plot_qol"))
+    output$plot_ui_work <- renderUI(make_plot_ui(input$breakdown_work, 
+                                                 input$chart_type_work,"map_work","plot_work"))    
+    output$plot_ui_fin <-  renderUI(make_plot_ui(input$breakdown_fin,  
+                                                 input$chart_type_fin ,"map_fin","plot_fin"))
     
 }
 

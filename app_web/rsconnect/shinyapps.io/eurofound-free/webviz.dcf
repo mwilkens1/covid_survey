@@ -5,6 +5,6 @@ account: eurofound-free
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2129183
-bundleId: 3034169
+bundleId: 3041120
 url: https://eurofound-free.shinyapps.io/webviz/
-when: 1587295873.25927
+when: 1587418557.04745
