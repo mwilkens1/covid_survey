@@ -51,6 +51,8 @@ make_panel <- function(panel_title,panel_code) {
            
            column(width=3,
                   
+                  #Conditional panel that lets you choose map or bar
+                  #It only shows up if country is selected as breakdown
                   conditionalPanel(
                     condition =  paste0("input.breakdown_",panel_code,
                                         " == 'B001'"),
@@ -64,14 +66,31 @@ make_panel <- function(panel_title,panel_code) {
            
            fluidRow(
              column(width=12,
-          
-                  uiOutput(paste0('plot_ui_',panel_code)),
-                    
-                  downloadButton(paste0('downloadData_',panel_code), label = "Download data")
+              
+                  #This shows the plot or map (see server)  
+                  uiOutput(paste0('plot_ui_',panel_code))
                     
              )
-           )
+           ),
            
+           fluidRow(
+             
+             column(width=9,
+                  
+                  #Description under the plot
+                  textOutput(paste0("description_",panel_code))
+                    
+             ),
+             
+             column(width=3, align="right",
+              
+                  #Download button
+                  downloadButton(paste0('downloadData_',panel_code), label = "Download data")
+                    
+              )
+             
+           ),
+
   )
   
 }

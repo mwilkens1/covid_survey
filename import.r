@@ -261,7 +261,7 @@ for (var in c("E008_01","E008_02","E008_03","E008_04","E008_05","E008_06")) {
   
   ds[[var]] <- factor(ds[[var]], levels=c(1,2,3,4), 
                       labels=c("A member of your family/relative",
-                               "A friend, neighbour, or someone else, who does not belong to your family/relatives",
+                               "A friend, neighbour, or someone else",
                                "A service provider, institution or organisation",
                                "Nobody"))
 }
@@ -321,7 +321,7 @@ comment(ds$D004_05) = "Work-life balance: Found that your family responsibilitie
 comment(ds$D005_01) = "Over the last 2 weeks, how often have you worked in your free time to meet work demands?"
 comment(ds$D006_01) = "How frequently did you work from home before the outbreak of Covid-19?"
 comment(ds$D007_01) = "Have you started to work from home as a result of the COVID-19 situation?"
-comment(ds$D008_01) = "how likely or unlikely do you think it is that you might lose your job in the next 3 months?"
+comment(ds$D008_01) = "Do you think you might lose your job in the next 3 months?"
 comment(ds$E001_01) = "Is your household able to make ends meet?"
 comment(ds$E002_01) = "Economising: Gone without fresh fruit and vegetables"
 comment(ds$E002_02) = "Economising: Bought cheaper cuts of meat or bought less than wanted"
@@ -334,7 +334,7 @@ comment(ds$E003_06) = "Arrears: Payments for healthcare or health insurance"
 comment(ds$E004) = "Financial situation of household 3 months ago"
 comment(ds$E005) = "Financial situation of household in 3 months"
 comment(ds$E006) = "If your household would not receive any income, how long would your household be able to maintain the same standard of living using savings?"
-comment(ds$E007_01) = "How likely or unlikely do you think it is that you will need to leave your accommodation within the next 6 months because you can no longer afford it?"
+comment(ds$E007_01) = "Do you think you will need to leave your accommodation within the next 6 months because you can no longer afford it?"
 comment(ds$E008_01) = "Support: If you needed help around the house when ill"
 comment(ds$E008_02) = "Support: If you needed advice about a serious personal or family matter"
 comment(ds$E008_03) = "Support: If you needed help when looking for a job"
@@ -484,14 +484,14 @@ for (var in c("C006_01","C006_02","C006_03")) {
 sel_levels_list[["D002"]] <- c("Yes, permanently","Yes, temporarily")
 sel_levels_list[["D003"]] <- c("Reduced a lot","Reduced a little")
 
-for (var in c("D006_01","D006_02","D006_03","D006_04","D006_05")) {
+for (var in c("D004_01","D004_02","D004_03","D004_04","D004_05")) {
   
   sel_levels_list[[var]] <- c("Always","Most of the time")
   
 }
 
-sel_levels_list[["D005"]] <- c("Daily","Several times a week")
-sel_levels_list[["D006"]] <- c("Daily","Several times a week")
+sel_levels_list[["D005_01"]] <- c("Daily","Several times a week")
+sel_levels_list[["D006_01"]] <- c("Daily","Several times a week")
 sel_levels_list[["D007"]] <- c("Yes")
 sel_levels_list[["D008"]] <- c("Very likely","Rather likely")
 sel_levels_list[["E001_01"]] <- c("With great difficulty","With difficulty")
