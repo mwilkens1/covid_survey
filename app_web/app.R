@@ -9,6 +9,10 @@ library(leaflet)
 library(leafem)
 library(htmlwidgets)
 library(htmltools)
+library(rclipboard)
+
+#URL where the app is iframed
+base_url <- "https://eurofound.acc.fpfis.tech.ec.europa.eu/data/covid-19-survey-web-visualisation"
 
 #setwd(paste0(getwd(),"/app_web"))
 
@@ -79,11 +83,14 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
             
         })),
     
+     #necessary for the clipboard button
+     rclipboardSetup(),
+        
      fluidRow(   
          
        column(12,
          
-        tabsetPanel(#this starts the set of tabs
+        tabsetPanel(id="tab",#this starts the set of tabs
             
             #See 'make_panel.R'
             
@@ -106,7 +113,25 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
      h3("Filter data"),
      
      fluidRow(
-         
+
+         column(5,
+                pickerInput(inputId = "country_filter", label = "Country", 
+                            choices = levels(ds$B001),
+                            selected = levels(ds$B001)[1:27],
+                            options = list(`live-search` = TRUE,
+                                           `actions-box` = TRUE),
+                            multiple=TRUE,
+                            width = "100%"
+                ),
+                
+                pickerInput(inputId = "empstat_filter", label = "Employment status", 
+                            choices = levels(ds$emp_stat),
+                            selected = levels(ds$emp_stat),
+                            options = list(`actions-box` = TRUE),
+                            multiple = TRUE,
+                            width = "100%"
+                )),
+                  
          column(3,
          awesomeCheckboxGroup(
              inputId = "gender_filter",
@@ -129,24 +154,6 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
              label = "Education", 
              choices = levels(ds$F004),
              selected = levels(ds$F004)
-         )),
-         
-         column(5,
-         pickerInput(inputId = "country_filter", label = "Country", 
-                     choices = levels(ds$B001),
-                     selected = levels(ds$B001)[1:27],
-                     options = list(`live-search` = TRUE,
-                                    `actions-box` = TRUE),
-                     multiple=TRUE,
-                     width = "100%"
-         ),
-         
-         pickerInput(inputId = "empstat_filter", label = "Employment status", 
-                     choices = levels(ds$emp_stat),
-                     selected = levels(ds$emp_stat),
-                     options = list(`actions-box` = TRUE),
-                     multiple = TRUE,
-                     width = "100%"
          ))
          
      )
@@ -154,26 +161,189 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
 )
 
 # Define server 
-server <- function(input, output) {
-    
-    # This function takes the selected variable as an input and creates 
-    # a dropdown widget for selecting the category of that factor variable
-    # it is called in the server.
-    make_cat_selector <- function(inputId, inputvar) {
-        
-         pickerInput(inputId = inputId, label = "Select categories", 
-                     choices = levels_list[[inputvar]],
-                     selected = sel_levels_list[[inputvar]],
-                     multiple = TRUE,
-                     width = "100%")
-               
-    } 
-    
-    #Applying the category selector function to each tab
-    output$cat_selector_qol  <- renderUI(make_cat_selector("cat_sel_qol", input$var_qol)) 
-    output$cat_selector_work <- renderUI(make_cat_selector("cat_sel_work",input$var_work)) 
-    output$cat_selector_fin  <- renderUI(make_cat_selector("cat_sel_fin", input$var_fin)) 
+server <- function(input, output, session) {
 
+    #This section updates the categories with the categories relevant for the
+    # selected question. This is overruled if a parameter is added to the URL
+    
+    observe({
+        
+        #Querying the URL
+        query <- parseQueryString(session$clientData$url_search)
+        
+        #Function for updating the selected categories
+        change_category <- function(parameter,inputvar) {
+            
+            # if a parameter is present in URL
+            if (!is.null(query[[parameter]])) {
+                
+                # Get it and get rid of _
+                cat_sel <- query[[parameter]] %>%
+                    strsplit("_")
+                
+                selected <- cat_sel[[1]]
+                
+            #If not get the default preferred levels    
+            } else {
+                
+                selected <- sel_levels_list[[inputvar]]
+                
+            }
+        
+        }
+        
+        #Update the inputs by calling the functions
+        updatePickerInput(session, inputId="cat_sel_qol",
+                          choices = levels_list[[input$var_qol]],
+                selected = change_category("cat_sel_qol",input$var_qol))
+    
+        updatePickerInput(session, inputId="cat_sel_work",
+                          choices = levels_list[[input$var_work]],
+                selected = change_category("cat_sel_work",input$var_work))
+    
+        updatePickerInput(session, inputId="cat_sel_fin",
+                          choices = levels_list[[input$var_fin]],
+                selected = change_category("cat_sel_fin",input$var_fin))
+        
+        #Update panel choice
+        updateTabsetPanel(session,"tab",selected = query[["tab"]])
+        
+        #Update other fields according to parameters
+        updatePickerInput(session, "var_qol", selected = query[["var_qol"]])
+        updatePickerInput(session, "var_work", selected = query[["var_work"]])
+        updatePickerInput(session, "var_fin", selected = query[["var_fin"]])
+        
+        updatePickerInput(session, "breakdown_qol", selected = query[["breakdown_qol"]])
+        updatePickerInput(session, "breakdown_work", selected = query[["breakdown_work"]])
+        updatePickerInput(session, "breakdown_fin", selected = query[["breakdown_fin"]])
+        
+        updatePickerInput(session, "chart_type_qol", selected = query[["chart_type_qol"]])
+        updatePickerInput(session, "chart_type_work", selected = query[["chart_type_work"]])
+        updatePickerInput(session, "chart_type_fin", selected = query[["chart_type_fin"]])
+        
+        #Update filters. These are not dependent on the tabs
+        for (filter in c("country_filter","empstat_filter")) {
+                    
+            if (!is.null(query[[filter]])) {
+                
+                #parameter value must come in the form of country_country
+                selection <- query[[filter]] %>%
+                    strsplit("_")
+                
+                updatePickerInput(session, filter, selected = selection[[1]] )
+            }    
+        
+        }
+        
+        for (filter in c("gender_filter","age_filter","education_filter")) {
+            
+            if (!is.null(query[[filter]])) {    
+            
+                #parameter value must come in the form of country_country
+                selection <- query[[filter]] %>%
+                    strsplit("_")
+                
+                updateAwesomeCheckboxGroup(session, filter, selected = selection[[1]] )
+            }    
+            
+        }
+        
+    })
+    
+    
+    make_parameter <- function(input,inputstring) {
+        
+        if (!is.null(input)) {
+            
+            paste0("&",inputstring,"=",input)
+            
+        }
+        
+    }
+    
+    make_multiple_parameter <- function(input, inputstring) {
+        
+        if (!is.null(input)) {
+            
+            text <- paste0("&",inputstring,"=")
+            
+            for (i in input) {
+                
+                text <- paste0(text,i,"_")
+                
+            }
+        
+            return(substr(text,1,nchar(text)-1))
+            
+        }
+        
+    }
+    
+    #Create URL to reproduce the plot
+    make_url <- reactive({
+       
+      if (input$tab=="qol") {
+          
+          parameters <- paste0(
+              
+              "?tab=qol",
+              make_parameter(input$var_qol,"var_qol"),
+              make_multiple_parameter(input$cat_sel_qol,"cat_sel_qol"),
+              make_parameter(input$breakdown_qol,"breakdown_qol"),
+              make_parameter(input$chart_type_qol,"chart_type_qol")
+          
+          )
+          
+      } else if (input$tab=="work") {
+          
+          parameters <- paste0(
+              
+              "?tab=work",
+              make_parameter(input$var_work,"var_work"),
+              make_multiple_parameter(input$cat_sel_work,"cat_sel_work"),
+              make_parameter(input$breakdown_work,"breakdown_work"),
+              make_parameter(input$chart_type_work,"chart_type_work")
+              
+          )
+          
+      } else if (input$tab=="fin") {
+          
+          parameters <- paste0(
+              
+              "?tab=fin",
+              make_parameter(input$var_fin,"var_fin"),
+              make_multiple_parameter(input$cat_sel_fin,"cat_sel_fin"),
+              make_parameter(input$breakdown_fin,"breakdown_fin"),
+              make_parameter(input$chart_type_fin,"chart_type_fin")
+              
+          )
+          
+      }
+        
+        url <- paste0(base_url,
+                      parameters,
+                      make_multiple_parameter(input$country_filter,"country_filter"),
+                      make_multiple_parameter(input$empstat_filter,"empstat_filter"),
+                      make_multiple_parameter(input$gender_filter,"gender_filter"),
+                      make_multiple_parameter(input$age_filter,"age_filter"),
+                      make_multiple_parameter(input$education_filter,"education_filter")
+                )
+        
+    })
+
+    # Add clipboard buttons
+    output$clip_qol <- renderUI({
+        rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
+    })
+    
+    output$clip_work <- renderUI({
+        rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
+    })
+    
+    output$clip_fin <- renderUI({
+        rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
+    })
+    
     # Here the make_data function is called ('make_data.R') for each panel
     # It returns a list of a dataframe and a data class (numeric or factor)
     # These variables are used for the plot as well as for the download data function

@@ -5,7 +5,7 @@ make_description <- function(category, inputvar) {
   
   if (class=="factor") {
     
-    text <- "The figure shows the those that answered:"
+    text <- "The figure shows the the percentage that answered:"
     
     #Loop over categories if more than 1 selected
     if (length(category)>1) {
@@ -15,7 +15,7 @@ make_description <- function(category, inputvar) {
         #Only for those with more than 2 categories selected
         # If not the final two categories
         if ((length(category)>2) & (c %in% category[1:(length(category)-2)])) {
-          print("1")
+
           text <- paste0(text," '",c,"',")
           
         }    
@@ -46,7 +46,7 @@ make_description <- function(category, inputvar) {
     # If numeric variable
   } else {
     
-    return("The figure shows the mean value")
+    return("The figure shows the mean")
     
   }
   

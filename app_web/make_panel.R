@@ -3,7 +3,7 @@
 #Quality of life, Work and teleworking and Financial situation.
 make_panel <- function(panel_title,panel_code) {
   
-  tabPanel(title=panel_title, style="padding:10px;",
+  tabPanel(title=panel_title, value=panel_code, style="padding:10px;",
            
            fluidRow(
              
@@ -31,7 +31,7 @@ make_panel <- function(panel_title,panel_code) {
            
            column(width=6,
                   
-                  #This dropdown only shows if its a factor variable. 
+                  # This dropdown only shows if its a factor variable. 
                   # The user is supposed to select a category belonging 
                   # to the variable selected. 
                   conditionalPanel(
@@ -42,12 +42,14 @@ make_panel <- function(panel_title,panel_code) {
                     condition = paste0("input.var_",panel_code,
                                        " && factors.indexOf(input.var_",
                                        panel_code,") > -1"),
-                    #The extra widget is actually created serverside 
-                    #because it needs the selected question as an 
-                    #input variable. See first part of the server.
-                    uiOutput(paste0('cat_selector_',panel_code))
-                    
-                  )),
+                    pickerInput(inputId = paste0("cat_sel_",panel_code), 
+                              label = "Select category", 
+                              choices = "",
+                              multiple = TRUE,
+                              width = "100%")
+                  
+                  )
+           ),
            
            column(width=3,
                   
@@ -75,18 +77,21 @@ make_panel <- function(panel_title,panel_code) {
            
            fluidRow(
              
-             column(width=9,
+             column(width=8,
                   
                   #Description under the plot
                   textOutput(paste0("description_",panel_code))
                     
              ),
              
-             column(width=3, align="right",
-              
-                  #Download button
-                  downloadButton(paste0('downloadData_',panel_code), label = "Download data")
+             column(width=4,
                     
+                  fluidRow(
+
+                  #Download button
+                  column(6, align="right",downloadButton(paste0('downloadData_',panel_code), label = "Download data")),
+                  column(6, align="right",uiOutput(paste0("clip_",panel_code)))
+                  )
               )
              
            ),

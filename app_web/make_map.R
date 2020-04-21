@@ -72,8 +72,11 @@ make_map <- function(inputvar, inputcat, data) {
                     #this puts it back again in another position to avoid overlap
                     onRender("function(el, x) {
                     L.control.zoom({ position: 'bottomleft' }).addTo(this)}") %>% 
-      #Sets the default view and zoom level
-      setView(14,52.2, 4) %>%
+      #Adding the logo. This is from package leafem
+      addLogo("https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
+              alpha = 0.8, src = "remote",
+              position = "topright",
+              offset.x = 0, offset.y = 0, width = 86, height = 60) %>%
       #Using CartoDB positron as the map in the background
       addProviderTiles(providers$CartoDB.Positron) %>%
       #Adding the polygons
@@ -99,11 +102,9 @@ make_map <- function(inputvar, inputcat, data) {
                 title = title,
                 labFormat = labelFormat(suffix = suffix),
                 opacity = 0.8) %>%
-      #Adding the logo. This is from package leafem
-      addLogo("https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
-                alpha = 0.8, src = "remote",
-                position = "topright",
-                offset.x = 0, offset.y = 0, width = 86, height = 60)
+      #Sets the default view and zoom level
+      setView(14,52.2, 4)
+     
   }
   
   #Calling the function
