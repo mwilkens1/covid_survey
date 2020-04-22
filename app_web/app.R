@@ -65,24 +65,35 @@ EF_colours <- list("#0D95D0", "#7DC462", "#E72F52", "#774FA0", "#EFB743", "#D446
 
 # Define UI 
 ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
-        
-    # This is a little piece of Javascript required for later. 
-    tags$head( # refers to the head of the html document
+                
+      # This is a little piece of Javascript required for later. 
+      tags$head( # refers to the head of the html document
         tags$script({ # start a javascript section in the html
-            
-            # Here a javascript array is created with all the names of the 
-            # factor variables in the form: ['name1','name2',...]
-            vars <- NULL
-            for (var in factors) {vars <- paste0(vars,"'",var,"'",',')}
-            
-            vars <- substr(vars, 1, nchar(vars)-1)
-            
-            #By pasting we get: 
-            # var factors = ['name1','name2',...]
-            paste0("var factors = [",vars,"];")
-            
-        })),
-    
+          
+          # Here a javascript array is created with all the names of the 
+          # factor variables in the form: ['name1','name2',...]
+          vars <- NULL
+          for (var in factors) {vars <- paste0(vars,"'",var,"'",',')}
+          
+          vars <- substr(vars, 1, nchar(vars)-1)
+          
+          #By pasting we get: 
+          # var factors = ['name1','name2',...]
+          paste0("var factors = [",vars,"];")
+          
+        }),
+        tags$style(
+          HTML(".shiny-notification {
+             position:fixed;
+             top: calc(50%);
+             right: calc(0%);
+             background-color: #00b462;
+             color: #ffffff;
+             }
+             "
+          )
+        )),                
+                
      #necessary for the clipboard button
      rclipboardSetup(),
         
@@ -157,15 +168,17 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
          ))
          
      )
-
 )
+
+
+
+
 
 # Define server 
 server <- function(input, output, session) {
 
     #This section updates the categories with the categories relevant for the
     # selected question. This is overruled if a parameter is added to the URL
-    
     observe({
         
         #Querying the URL
@@ -327,22 +340,38 @@ server <- function(input, output, session) {
                       make_multiple_parameter(input$gender_filter,"gender_filter"),
                       make_multiple_parameter(input$age_filter,"age_filter"),
                       make_multiple_parameter(input$education_filter,"education_filter")
-                )
+                ) %>%
+          URLencode()
         
     })
 
     # Add clipboard buttons
     output$clip_qol <- renderUI({
-        rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
+        rclipButton("clipbtn_qol", "Copy link", make_url(), icon("clipboard"))
     })
     
     output$clip_work <- renderUI({
-        rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
+        rclipButton("clipbtn_work", "Copy link", make_url(), icon("clipboard"))
     })
     
     output$clip_fin <- renderUI({
-        rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
+        rclipButton("clipbtn_fin", "Copy link", make_url(), icon("clipboard"))
     })
+
+    #Message that link has been copied
+    observeEvent(input$clipbtn_qol, {
+      showNotification("Link copied to clipboard",type="warning")
+    })
+
+    #Message that link has been copied
+    observeEvent(input$clipbtn_work, {
+      showNotification("Link copied to clipboard",type="warning")
+    })
+    
+    observeEvent(input$clipbtn_fin, {
+      showNotification("Link copied to clipboard",type="warning")
+    })
+    
     
     # Here the make_data function is called ('make_data.R') for each panel
     # It returns a list of a dataframe and a data class (numeric or factor)
@@ -367,6 +396,35 @@ server <- function(input, output, session) {
     output$plot_work <- renderPlotly(make_plot(input$var_work, input$cat_sel_work, data_work()))
     output$map_fin  <- renderLeaflet(make_map(input$var_fin, input$cat_sel_fin, data_fin()))
     output$plot_fin <- renderPlotly(make_plot(input$var_fin, input$cat_sel_fin, data_fin()))
+    
+    #This throws a warning if user selects no countries or only 'other countries'
+    observe({ 
+      
+      if (sum(input$country_filter %in% levels(ds$B001))==0) {
+        
+        sendSweetAlert(
+          session = session,
+          title = "Select at least one country",
+          type = "warning"
+        ) 
+        
+      }
+      
+      if (sum(input$country_filter %in% levels(ds$B001))==1) {
+        
+        if (input$country_filter=="Other country") {
+          
+          sendSweetAlert(
+            session = session,
+            title = "Select at least one country",
+            type = "warning"
+          ) 
+          
+        }
+        
+      }
+      
+    })
     
     # This function writes the ui. Had to do this server side because it needs to choose
     # between a leafletoutput and a plotly output

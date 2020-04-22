@@ -43,12 +43,13 @@ make_panel <- function(panel_title,panel_code) {
                                        " && factors.indexOf(input.var_",
                                        panel_code,") > -1"),
                     pickerInput(inputId = paste0("cat_sel_",panel_code), 
-                              label = "Select category", 
-                              choices = "",
-                              multiple = TRUE,
-                              width = "100%")
-                  
+                                label = "Select category", 
+                                choices = "",
+                                multiple = TRUE,
+                                width = "100%")
+                    
                   )
+           
            ),
            
            column(width=3,
@@ -84,14 +85,12 @@ make_panel <- function(panel_title,panel_code) {
                     
              ),
              
-             column(width=4,
+             column(width=4, align="right",
                     
-                  fluidRow(
-
-                  #Download button
-                  column(6, align="right",downloadButton(paste0('downloadData_',panel_code), label = "Download data")),
-                  column(6, align="right",uiOutput(paste0("clip_",panel_code)))
-                  )
+                  #Download button and link button 
+                  div(style="display:inline-block",downloadButton(paste0('downloadData_',panel_code), label = "Download data"),width=6),
+                  div(style="display:inline-block",uiOutput(paste0("clip_",panel_code)))
+                  
               )
              
            ),

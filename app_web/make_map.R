@@ -4,7 +4,8 @@ make_map <- function(inputvar, inputcat, data) {
   validate(
     need(
       (!is.null(inputcat) | class(ds[[inputvar]])=="numeric"), 
-      "Select at least one category")
+      "Select at least one category"
+      )
   )
   
   #Variable class
@@ -16,7 +17,7 @@ make_map <- function(inputvar, inputcat, data) {
   validate(
     need(
       (sum(levels(data$Country) %in% levels(shp_20$NAME_ENGL)) > 0 ), 
-      "Select at least one country")
+       "Select at least one country")
   )
   
   #Setting the axis label depending on the type of variable
@@ -25,10 +26,14 @@ make_map <- function(inputvar, inputcat, data) {
   #Only keeping countries in the shapefile that are also in the data
   shp_20 <- shp_20 %>% 
     subset(Country %in% levels(data$Country)) 
+  #"#AACBE9"
+  #"#036D9C"
   
   #This creates the color palette based on the EF styleguide
-  EF_aqua <- colorRampPalette(c("#AACBE9","#036D9C"))
-  
+  #EF_aqua <- colorRampPalette(c("#AACBE9","#036D9C"))
+  #EF colours are not working, using this color brewer gradient
+  colors <- c('#deebf7','#c6dbef','#9ecae1','#6baed6','#4292c6','#2171b5','#08519c','#08306b')
+   
   draw_map <- function(var) {
     
     #Changing to character to avoid a warning
@@ -40,10 +45,10 @@ make_map <- function(inputvar, inputcat, data) {
       left_join(data, by="Country") 
     
     #Number of bins for the plot
-    bins <- 6
-    
+    bins <- 8
+   
     #This creates the palette for the plot
-    pal <- colorBin(EF_aqua(bins), domain=shp_20[[var]], bins=bins)
+    pal <- colorBin(colors, domain=shp_20[[var]], bins=bins)
     
     #This creats the popup labels
     labels <- sprintf(

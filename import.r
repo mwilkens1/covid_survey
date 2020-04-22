@@ -311,8 +311,8 @@ comment(ds$C007_04) = "Trust: The European Union"
 comment(ds$C007_05) = "Trust: The healthcare system"
 comment(ds$C008) = "Urbanisation"
 comment(ds$D001) = "Employment status"
-comment(ds$D002) = "Lost job"
-comment(ds$D003) = "Working hours"
+comment(ds$D002) = "During the Covid-19 pandemic have you lost your job(s) or contract(s)?"
+comment(ds$D003) = "During the Covid-19 pandemic have your working hours...?"
 comment(ds$D004_01) = "Work-life balance: Kept worrying about work when you were not working"
 comment(ds$D004_02) = "Work-life balance: Felt too tired after work to do some of the household jobs which need to be done"
 comment(ds$D004_03) = "Work-life balance: Found that your job prevented you from giving the time you wanted to your family"
@@ -331,8 +331,8 @@ comment(ds$E003_03) = "Arrears: Payments related to consumer loans, including cr
 comment(ds$E003_04) = "Arrears: Telephone, mobile or internet connection bills"
 comment(ds$E003_05) = "Arrears: Payments related to informal loans from friends or relatives not living in your household"
 comment(ds$E003_06) = "Arrears: Payments for healthcare or health insurance"
-comment(ds$E004) = "Financial situation of household 3 months ago"
-comment(ds$E005) = "Financial situation of household in 3 months"
+comment(ds$E004) = "Financial situation of household now compared to 3 months ago"
+comment(ds$E005) = "Expected financial situation of household in 3 months"
 comment(ds$E006) = "If your household would not receive any income, how long would your household be able to maintain the same standard of living using savings?"
 comment(ds$E007_01) = "Do you think you will need to leave your accommodation within the next 6 months because you can no longer afford it?"
 comment(ds$E008_01) = "Support: If you needed help around the house when ill"
@@ -482,7 +482,7 @@ for (var in c("C006_01","C006_02","C006_03")) {
 }
 
 sel_levels_list[["D002"]] <- c("Yes, permanently","Yes, temporarily")
-sel_levels_list[["D003"]] <- c("Reduced a lot","Reduced a little")
+sel_levels_list[["D003"]] <- c("Decreased a lot","Decreased a little")
 
 for (var in c("D004_01","D004_02","D004_03","D004_04","D004_05")) {
   
@@ -492,7 +492,7 @@ for (var in c("D004_01","D004_02","D004_03","D004_04","D004_05")) {
 
 sel_levels_list[["D005_01"]] <- c("Daily","Several times a week")
 sel_levels_list[["D006_01"]] <- c("Daily","Several times a week")
-sel_levels_list[["D007"]] <- c("Yes")
+sel_levels_list[["D007_01"]] <- c("Yes")
 sel_levels_list[["D008"]] <- c("Very likely","Rather likely")
 sel_levels_list[["E001_01"]] <- c("With great difficulty","With difficulty")
 
