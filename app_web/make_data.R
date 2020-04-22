@@ -6,8 +6,11 @@ make_data <- function(inputvar, breakdown, category,
                       country_filter,
                       empstat_filter) {
 
+  #Retrieving the class of the variable to determine whether its numeric or factor
   class <- class(ds[[inputvar]])[length(class(ds[[inputvar]]))]
+  #Get the label of the breakdown variable
   label_breakdown <- names(breakdown_list)[match(breakdown,breakdown_list)]
+  #Count the number of selected categories
   numcats <- length(category)
   
   #Function for creating the data for each category of the variable
@@ -33,16 +36,9 @@ make_data <- function(inputvar, breakdown, category,
       filter(age_group %in% age_filter) %>%
       filter(F004 %in% education_filter) %>%
       filter(emp_stat %in% empstat_filter) %>%
-      #Dropping unused levels
-      droplevels() 
-    
-    df <- df %>%
       filter(B001 %in% country_filter) %>%
-      droplevels()
-      
-    
-    # Actual calculation
-    df <- df %>%
+      droplevels() %>%
+      # Actual calculation
       # By the chosen breakdown
       group_by(!!sym(breakdown)) %>% 
       # Calculate the weighted mean

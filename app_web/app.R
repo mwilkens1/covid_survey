@@ -12,7 +12,7 @@ library(htmltools)
 library(rclipboard)
 
 #URL where the app is iframed
-base_url <- "https://eurofound.acc.fpfis.tech.ec.europa.eu/data/covid-19-survey-web-visualisation"
+domain <- "https://eurofound.acc.fpfis.tech.ec.europa.eu/data/covid-19-survey-web-visualisation"
 
 #setwd(paste0(getwd(),"/app_web"))
 
@@ -82,6 +82,9 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
           paste0("var factors = [",vars,"];")
           
         }),
+        #This CSS code is required to change the position and
+        #formatting of the messsage box you get when you click
+        #'copy link'. 
         tags$style(
           HTML(".shiny-notification {
              position:fixed;
@@ -96,13 +99,18 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
                 
      #necessary for the clipboard button
      rclipboardSetup(),
-        
+      
+     #Here the actual layout of the page starts  
      fluidRow(   
          
        column(12,
          
         tabsetPanel(id="tab",#this starts the set of tabs
             
+            #The tabsetpanel set up makes things a little complicated because
+            #there are now three different widgets for selecting questions 
+            #who all have a different set of questions. So a lot of things server
+            #side need to to be run for each panel.
             #See 'make_panel.R'
             
             #First tab
@@ -127,7 +135,9 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
 
          column(5,
                 pickerInput(inputId = "country_filter", label = "Country", 
+                            # Choices are all the levels of the country factor
                             choices = levels(ds$B001),
+                            # Selected are the EU27 by default
                             selected = levels(ds$B001)[1:27],
                             options = list(`live-search` = TRUE,
                                            `actions-box` = TRUE),
@@ -142,31 +152,30 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
                             multiple = TRUE,
                             width = "100%"
                 )),
-                  
-         column(3,
-         awesomeCheckboxGroup(
-             inputId = "gender_filter",
-             label = "Gender", 
-             choices = levels(ds$B002),
-             selected = levels(ds$B002)
-         )),
          
-         column(2,
-         awesomeCheckboxGroup(
-             inputId = "age_filter",
-             label = "Age", 
-             choices = levels(ds$age_group),
-             selected = levels(ds$age_group)
-         )),
-         
-         column(2,
-         awesomeCheckboxGroup(
-             inputId = "education_filter",
-             label = "Education", 
-             choices = levels(ds$F004),
-             selected = levels(ds$F004)
-         ))
-         
+         column(7,
+           #splitlayout evenly spreads the elements within the column    
+           splitLayout(
+                    
+             awesomeCheckboxGroup(
+                 inputId = "gender_filter",
+                 label = "Gender", 
+                 choices = levels(ds$B002),
+                 selected = levels(ds$B002)),
+    
+             awesomeCheckboxGroup(
+                 inputId = "age_filter",
+                 label = "Age", 
+                 choices = levels(ds$age_group),
+                 selected = levels(ds$age_group)),
+    
+             awesomeCheckboxGroup(
+                 inputId = "education_filter",
+                 label = "Education", 
+                 choices = levels(ds$F004),
+                 selected = levels(ds$F004))
+           )
+        )
      )
 )
 
@@ -177,8 +186,13 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
 # Define server 
 server <- function(input, output, session) {
 
-    #This section updates the categories with the categories relevant for the
-    # selected question. This is overruled if a parameter is added to the URL
+    # This section updates the categories with the categories relevant for the
+    # selected question. Some questions have a 5 point likert scale while others 
+    # are yes / no for example. 
+    # What this part also does is it reads the parameters from the url, e.g. ?tab=qol
+    # paramaters added to the url overrule any selections made in the app and 
+    # automatically adjust them. This functionality is added so that links can be made
+    # to specific plot configurations.
     observe({
         
         #Querying the URL
@@ -190,7 +204,7 @@ server <- function(input, output, session) {
             # if a parameter is present in URL
             if (!is.null(query[[parameter]])) {
                 
-                # Get it and get rid of _
+                # Get it and get rid of '_'
                 cat_sel <- query[[parameter]] %>%
                     strsplit("_")
                 
@@ -221,7 +235,7 @@ server <- function(input, output, session) {
         #Update panel choice
         updateTabsetPanel(session,"tab",selected = query[["tab"]])
         
-        #Update other fields according to parameters
+        #Update other fields according to parameters in the URL
         updatePickerInput(session, "var_qol", selected = query[["var_qol"]])
         updatePickerInput(session, "var_work", selected = query[["var_work"]])
         updatePickerInput(session, "var_fin", selected = query[["var_fin"]])
@@ -263,7 +277,10 @@ server <- function(input, output, session) {
         
     })
     
+    #This part constructs a URL with parameters that can be copied by the user 
+    #to go back to the same exact plot configuration later
     
+    #Function to create a parameter string
     make_parameter <- function(input,inputstring) {
         
         if (!is.null(input)) {
@@ -274,6 +291,9 @@ server <- function(input, output, session) {
         
     }
     
+    # Function to create parameter string with multiple values.
+    # it places an underscore between each value.
+    # e.g. '&country_filter=Austria_Germany'
     make_multiple_parameter <- function(input, inputstring) {
         
         if (!is.null(input)) {
@@ -285,16 +305,20 @@ server <- function(input, output, session) {
                 text <- paste0(text,i,"_")
                 
             }
-        
+          
+            #Removing final underscore 
             return(substr(text,1,nchar(text)-1))
             
         }
         
     }
     
-    #Create URL to reproduce the plot
+    #Putting it together: create URL to reproduce the plot
     make_url <- reactive({
        
+      # Question selection, category selection, breakdown selection and chart type
+      # are dependent on the tab so parameters are made for each of tab
+      # Quality of life tab
       if (input$tab=="qol") {
           
           parameters <- paste0(
@@ -306,7 +330,8 @@ server <- function(input, output, session) {
               make_parameter(input$chart_type_qol,"chart_type_qol")
           
           )
-          
+      
+      # Work tab        
       } else if (input$tab=="work") {
           
           parameters <- paste0(
@@ -318,7 +343,8 @@ server <- function(input, output, session) {
               make_parameter(input$chart_type_work,"chart_type_work")
               
           )
-          
+      
+      #Financial security tab        
       } else if (input$tab=="fin") {
           
           parameters <- paste0(
@@ -332,45 +358,21 @@ server <- function(input, output, session) {
           )
           
       }
-        
-        url <- paste0(base_url,
-                      parameters,
-                      make_multiple_parameter(input$country_filter,"country_filter"),
-                      make_multiple_parameter(input$empstat_filter,"empstat_filter"),
-                      make_multiple_parameter(input$gender_filter,"gender_filter"),
-                      make_multiple_parameter(input$age_filter,"age_filter"),
-                      make_multiple_parameter(input$education_filter,"education_filter")
-                ) %>%
-          URLencode()
-        
+      
+      #Pasting the pieces together to one URL
+      url <- paste0(domain,
+                    parameters,
+                    make_multiple_parameter(input$country_filter,"country_filter"),
+                    make_multiple_parameter(input$empstat_filter,"empstat_filter"),
+                    make_multiple_parameter(input$gender_filter,"gender_filter"),
+                    make_multiple_parameter(input$age_filter,"age_filter"),
+                    make_multiple_parameter(input$education_filter,"education_filter")
+              ) %>%
+        # Passing it trough URL encode to ensure compatibiltiy in the browser
+        URLencode()
+      
     })
 
-    # Add clipboard buttons
-    output$clip_qol <- renderUI({
-        rclipButton("clipbtn_qol", "Copy link", make_url(), icon("clipboard"))
-    })
-    
-    output$clip_work <- renderUI({
-        rclipButton("clipbtn_work", "Copy link", make_url(), icon("clipboard"))
-    })
-    
-    output$clip_fin <- renderUI({
-        rclipButton("clipbtn_fin", "Copy link", make_url(), icon("clipboard"))
-    })
-
-    #Message that link has been copied
-    observeEvent(input$clipbtn_qol, {
-      showNotification("Link copied to clipboard",type="warning")
-    })
-
-    #Message that link has been copied
-    observeEvent(input$clipbtn_work, {
-      showNotification("Link copied to clipboard",type="warning")
-    })
-    
-    observeEvent(input$clipbtn_fin, {
-      showNotification("Link copied to clipboard",type="warning")
-    })
     
     
     # Here the make_data function is called ('make_data.R') for each panel
@@ -388,8 +390,8 @@ server <- function(input, output, session) {
                                    input$gender_filter, input$age_filter, input$education_filter, 
                                    input$country_filter, input$empstat_filter))
     
-    #Calling the make_plot and make_map function for each tab
-    #Both functions are in a seperate R file
+    # Calling the make_plot and make_map function for each tab
+    # Both functions are in a seperate R file
     output$map_qol  <- renderLeaflet(make_map(input$var_qol, input$cat_sel_qol, data_qol()))
     output$plot_qol <- renderPlotly(make_plot(input$var_qol, input$cat_sel_qol, data_qol()))
     output$map_work  <- renderLeaflet(make_map(input$var_work, input$cat_sel_work, data_work()))
@@ -397,9 +399,10 @@ server <- function(input, output, session) {
     output$map_fin  <- renderLeaflet(make_map(input$var_fin, input$cat_sel_fin, data_fin()))
     output$plot_fin <- renderPlotly(make_plot(input$var_fin, input$cat_sel_fin, data_fin()))
     
-    #This throws a warning if user selects no countries or only 'other countries'
+    # This throws a warning if user selects no countries or only 'other countries'
     observe({ 
       
+      # If the number of selected filters is zero
       if (sum(input$country_filter %in% levels(ds$B001))==0) {
         
         sendSweetAlert(
@@ -410,6 +413,8 @@ server <- function(input, output, session) {
         
       }
       
+      # or if it is one but only 'other country' (other country 
+      # cannot be plotted)
       if (sum(input$country_filter %in% levels(ds$B001))==1) {
         
         if (input$country_filter=="Other country") {
@@ -426,7 +431,7 @@ server <- function(input, output, session) {
       
     })
     
-    # This function writes the ui. Had to do this server side because it needs to choose
+    # This function writes a ui part. Had to do this server side because it needs to choose
     # between a leafletoutput and a plotly output
     make_plot_ui <- function(breakdown, chart_type, mapoutput, plotoutput) {    
         
@@ -455,13 +460,15 @@ server <- function(input, output, session) {
                 
             }
             
+            #and make the plotly
             plotlyOutput(plotoutput, height=height) %>% withSpinner()
             
         }
         
     }
     
-    #Calling the plot ui functions for each tab
+    # Calling the plot ui functions for each tab
+    # renderUI ensures its result is redered as as ui element.
     output$plot_ui_qol <-  renderUI(make_plot_ui(input$breakdown_qol,  
                                                  input$chart_type_qol ,"map_qol","plot_qol"))
     output$plot_ui_work <- renderUI(make_plot_ui(input$breakdown_work, 
@@ -469,10 +476,16 @@ server <- function(input, output, session) {
     output$plot_ui_fin <-  renderUI(make_plot_ui(input$breakdown_fin,  
                                                  input$chart_type_fin ,"map_fin","plot_fin"))
     
-    #Applying the make discription function to each tab
+    # Applying the make_description function to each tab
+    # make_description is in 'make_description.R' and creates the little description 
+    # of what is shown under the plot. This is rendered as text.
     output$description_qol <- renderText(make_description(input$cat_sel_qol, input$var_qol))
     output$description_work <- renderText(make_description(input$cat_sel_work, input$var_work))
     output$description_fin <- renderText(make_description(input$cat_sel_fin, input$var_fin))
+    
+    # The user has the option to download the data that was used to
+    # create the plot. The make_data function that was called above prepares the data. 
+    # This is used to create the plot and seperately its used by the download button.
     
     # Removing commas from the data for the download data function
     data_qol_nocommas <- reactive({
@@ -507,6 +520,35 @@ server <- function(input, output, session) {
     output$downloadData_work <- downloaddata(data_work_nocommas())
     output$downloadData_fin <- downloaddata(data_fin_nocommas())
 
+    # Here is the button to copy the URL for the plot configuration
+    # Three different ones are made for each panel.
+    # Add clipboard buttons
+    output$clip_qol <- renderUI({
+      rclipButton("clipbtn_qol", "Copy link", make_url(), icon("clipboard"))
+    })
+    
+    output$clip_work <- renderUI({
+      rclipButton("clipbtn_work", "Copy link", make_url(), icon("clipboard"))
+    })
+    
+    output$clip_fin <- renderUI({
+      rclipButton("clipbtn_fin", "Copy link", make_url(), icon("clipboard"))
+    })
+    
+    #Message that link has been copied
+    #Observe event ensures the message is shown if the button has been clicked.
+    observeEvent(input$clipbtn_qol, {
+      showNotification("Link copied to clipboard",type="warning")
+    })
+    
+    observeEvent(input$clipbtn_work, {
+      showNotification("Link copied to clipboard",type="warning")
+    })
+    
+    observeEvent(input$clipbtn_fin, {
+      showNotification("Link copied to clipboard",type="warning")
+    })
+    
 }
 
 # Run the application 

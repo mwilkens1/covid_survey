@@ -1,6 +1,7 @@
 # Function for the description under the plot
 make_description <- function(category, inputvar) {
   
+  # Getting the class of the input variable
   class <- class(ds[[inputvar]])[length(class(ds[[inputvar]]))]
   
   if (class=="factor") {
