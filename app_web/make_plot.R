@@ -1,17 +1,12 @@
 #Function for making the plot
 make_plot <- function(inputvar, inputcat, data) {
 
-  # Show a message if for a categorical variable no categories are selected
-  validate(
-    need(
-      (!is.null(inputcat) | class(ds[[inputvar]])=="numeric"), 
-      "Select at least one category")
-  )
-  
   #Variable class
   class <- data[[2]]
   #The dataframe
-  data <- data[[1]]
+  data <- data[[1]] %>%
+    droplevels()
+  #Droplevels here because we want to get rid of any empty breakdown categories.
 
   #Setting the axis label depending on the type of variable
   if (class=="numeric") {x_label <- "Mean"} else {x_label <- "%"}
@@ -42,7 +37,7 @@ make_plot <- function(inputvar, inputcat, data) {
   
   #Add layout elements
   fig <- fig %>% layout(xaxis = list(title = x_label,
-                                     hoverformat='.1f'), 
+                                     hoverformat='.0f'), 
                         yaxis=list(title=NA, autorange="reversed"),
                         barmode = 'stack',
                         hovermode = 'compare',

@@ -4,8 +4,40 @@ make_data <- function(inputvar, breakdown, category,
                       age_filter,
                       education_filter,
                       country_filter,
-                      empstat_filter) {
+                      empstat_filter,
+                      threshold) {
 
+  #Series of messages in case a user selects too little inputs
+  validate(
+    need(
+      (!is.null(category) | class(ds[[inputvar]])=="numeric"), 
+      "Please select at least one category")
+  )
+  
+  validate(
+    need(
+      (!is.null(age_filter)), 
+      "Please select at least one age group")
+  )
+  
+  validate(
+    need(
+      (!is.null(education_filter)), 
+      "Please select at least one educational level")
+  )
+  
+  validate(
+    need(
+      (!is.null(empstat_filter)), 
+      "Please select at least one employment status")
+  )
+  
+  validate(
+    need(
+      ((country_filter %in% levels(shp_20$NAME_ENGL)) > 0 ), 
+      "Select at least one country")
+  )
+  
   #Retrieving the class of the variable to determine whether its numeric or factor
   class <- class(ds[[inputvar]])[length(class(ds[[inputvar]]))]
   #Get the label of the breakdown variable
@@ -17,50 +49,92 @@ make_data <- function(inputvar, breakdown, category,
   #In case of a numeric variable this function is only run once.
   calc_data <- function(data, inputvar_inner, cname) {
   
-    #Preparing the data
-    df <- data %>%
-      #Select needed variables
-      select(inputvar_inner, breakdown, B002, age_group, F004, B001, emp_stat, w, EU27) %>%
-      #Filter out NA's in inputvar and breakdown
-      filter(!is.na(!!sym(inputvar_inner)), !is.na(!!sym(breakdown)), !is.na(w))
+      #Preparing the data
+      df <- data %>%
+        #Select needed variables
+        select(inputvar_inner, breakdown, B002, age_group, F004, B001, emp_stat, w, EU27) %>%
+        #Filter out NA's in inputvar and breakdown
+        filter(!is.na(!!sym(inputvar_inner)), !is.na(!!sym(breakdown)), !is.na(w)) %>%
+        #Applying gender age, education and employment status filters
+        {if (gender_filter!="All") filter(., B002 %in% gender_filter) else .} %>%
+        filter(age_group %in% age_filter) %>%
+        filter(F004 %in% education_filter) %>%
+        filter(emp_stat %in% empstat_filter) %>%
+        droplevels()
     
-    #Calculating the total
-    df_total <- df %>% 
-      # The totals are always EU27
-      filter(EU27==TRUE) 
-    mean_total <- weighted.mean(df_total[[inputvar_inner]], df_total$w)    
+      # Calculating the total 
+      # This is always EU27, but with any other filter applied (gender, age etc)
+      # This means the EU27 total will appear in the bar chart if all filters have been unselected
+      df_total <- df %>% 
+        filter(EU27==TRUE) 
+      mean_total <- weighted.mean(df_total[[inputvar_inner]], df_total$w)    
+      
+      df <- df %>%
+        #Applying the country filter now
+        filter(B001 %in% country_filter) %>%
+        droplevels()
+  
+        #This tests whether the overall dataset (all categories combined) is large enough
+        validate(
+          need(
+            (nrow(df)>threshold), 
+            "Insufficient data, please change filters")
+        )
+        
+      #Even if the total number is large enough, some categories of the breakdown may not be
+      #These are then excluded from the data (not from the totals)
+  
+      #Counting the n per category of the breakdown    
+      df_count <- df %>%
+        group_by(!!sym(breakdown)) %>% 
+        summarise(n = n()) %>%
+        filter(n < threshold)
+      
+      #Getting the categories that are excluded
+      cats_below_threshold <- as.vector(unique(df_count[[1]]))
+      all_cats <- as.vector(unique(df[[breakdown]]))
+      #and those that should remain
+      not_excluded <- setdiff(all_cats,cats_below_threshold)
     
-    #Apply any filters that have been activated by the user
-    df <- df %>%
-      filter(B002 %in% gender_filter) %>%
-      filter(age_group %in% age_filter) %>%
-      filter(F004 %in% education_filter) %>%
-      filter(emp_stat %in% empstat_filter) %>%
-      filter(B001 %in% country_filter) %>%
-      droplevels() %>%
+      #Filter out the ones that are excluded
+      df <- df %>%
+        filter(!!sym(breakdown) %in% not_excluded)
+      #Not dropping the empty levels of the breakdown here so in case of a map the 
+      #countries will appear as NA.
+      
+      #General check on the total numbers again 
+      validate(
+        need(
+          (nrow(df)>threshold), 
+          "Insufficient data, please change filters")
+      )
+      
       # Actual calculation
       # By the chosen breakdown
-      group_by(!!sym(breakdown)) %>% 
-      # Calculate the weighted mean
-      mutate(!!cname := weighted.mean(!!sym(inputvar_inner), w),
-             # Change the label of the breakdown variable
-             !!label_breakdown := !!sym(breakdown)) %>%
-      ungroup() %>%
-      # Keep only 2 columns: breakdown and the outcome
-      select(!!label_breakdown, !!cname) %>%
-      distinct() %>%
-      # Add the total
-      add_row(!!label_breakdown := "Total (EU27)", !!cname := mean_total)
-  
-    return(df)
+      df <- df %>%
+        group_by(!!sym(breakdown)) %>% 
+        # Calculate the weighted mean
+        mutate(!!cname := weighted.mean(!!sym(inputvar_inner), w),
+               # Change the label of the breakdown variable
+               !!label_breakdown := !!sym(breakdown)) %>%
+        ungroup() %>%
+        # Keep only 2 columns: breakdown and the outcome
+        select(!!label_breakdown, !!cname) %>%
+        distinct() %>%
+        # Add the total
+        add_row(!!label_breakdown := "Total (EU27)", !!cname := mean_total)
     
+      out <- list(df, cats_below_threshold)
+      
+      return(out)
+      
   }
   
   # If its a factor we need to add columns per selected category. 
   # The seletion is made by the user and captured in 'category'
   # The function above is run multiple times, each time adding a column to the data
   if (class=="factor") {
-    
+
     # Apply the calc data function to each selected category
     df <- map(category, function(c) {
       
@@ -69,7 +143,9 @@ make_data <- function(inputvar, breakdown, category,
         mutate(!!c := as.numeric(!!sym(inputvar) == c) * 100) %>%
         #Then pass that dataframe to the function
         calc_data(c,c)
-
+      
+      return(df[[1]])
+      
       }) 
     
     # If more than one category selected...
@@ -85,7 +161,13 @@ make_data <- function(inputvar, breakdown, category,
       df <- df[[1]]
       
     }
-    
+
+    #Get the excluded countries by running the function once and
+    #saving the second element in the list
+    excluded <- calc_data({ds %>%
+                            mutate(!!category[1] := as.numeric(!!sym(inputvar) == category[1]) * 100)},
+                            category[1],category[1])[[2]]
+
   #If a numeric variable then just run the function once  
   } else {
     
@@ -93,10 +175,16 @@ make_data <- function(inputvar, breakdown, category,
     
     df <- calc_data(data=ds, inputvar_inner=var, cname="Mean")
     
+    excluded <- df[[2]]
+    df <- df[[1]]
+
   }    
   
-  #Finally, store in a list with first the dataframe and then the class of the inputvariable
-  df <- list(df, class)
+  #Finally, store in a list:
+  # - dataframe
+  # - class of the inputvariable
+  # - vector of excluded breakdown categories
+  df <- list(df, class, excluded)
   
   return(df)
 

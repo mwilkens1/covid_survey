@@ -327,14 +327,14 @@ comment(ds$E002_01) = "Economising: Gone without fresh fruit and vegetables"
 comment(ds$E002_02) = "Economising: Bought cheaper cuts of meat or bought less than wanted"
 comment(ds$E003_01) = "Arrears: Rent or mortgage payments for accommodation"
 comment(ds$E003_02) = "Arrears: Utility bills, such as electricity, water, gas"
-comment(ds$E003_03) = "Arrears: Payments related to consumer loans, including credit card overdrafts (to buy electrical appliances, a car, furniture, etc.)"
+comment(ds$E003_03) = "Arrears: Payments related to consumer loans, including credit card overdrafts"
 comment(ds$E003_04) = "Arrears: Telephone, mobile or internet connection bills"
 comment(ds$E003_05) = "Arrears: Payments related to informal loans from friends or relatives not living in your household"
 comment(ds$E003_06) = "Arrears: Payments for healthcare or health insurance"
 comment(ds$E004) = "Financial situation of household now compared to 3 months ago"
 comment(ds$E005) = "Expected financial situation of household in 3 months"
-comment(ds$E006) = "If your household would not receive any income, how long would your household be able to maintain the same standard of living using savings?"
-comment(ds$E007_01) = "Do you think you will need to leave your accommodation within the next 6 months because you can no longer afford it?"
+comment(ds$E006) = "Without income, how long would your household be able to maintain the same standard of living using savings?"
+comment(ds$E007_01) = "Do you need to leave your accommodation within the next 6 months because you can no longer afford it?"
 comment(ds$E008_01) = "Support: If you needed help around the house when ill"
 comment(ds$E008_02) = "Support: If you needed advice about a serious personal or family matter"
 comment(ds$E008_03) = "Support: If you needed help when looking for a job"
@@ -471,7 +471,7 @@ sel_levels_list[["C004_01"]] <- c("Very good","Good")
 
 for (var in c("C005_01","C005_02","C005_03","C005_04","C005_05")) {
   
-  sel_levels_list[[var]] <- c("At no time","Some of the time")
+  sel_levels_list[[var]] <- c("All of the time","Most of the time")
   
 }
 
@@ -490,10 +490,10 @@ for (var in c("D004_01","D004_02","D004_03","D004_04","D004_05")) {
   
 }
 
-sel_levels_list[["D005_01"]] <- c("Daily","Several times a week")
+sel_levels_list[["D005_01"]] <- c("Every day","Every other day")
 sel_levels_list[["D006_01"]] <- c("Daily","Several times a week")
 sel_levels_list[["D007_01"]] <- c("Yes")
-sel_levels_list[["D008"]] <- c("Very likely","Rather likely")
+sel_levels_list[["D008_01"]] <- c("Very likely","Rather likely")
 sel_levels_list[["E001_01"]] <- c("With great difficulty","With difficulty")
 
 for (var in c("E002_01","E002_02","E003_01","E003_02","E003_03","E003_04","E003_05","E003_06")) {

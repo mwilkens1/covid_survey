@@ -47,8 +47,28 @@ make_description <- function(category, inputvar) {
     # If numeric variable
   } else {
     
-    return("The figure shows the mean")
+    return("The figure shows the mean.")
     
   }
+  
+}
+
+make_excluded_text <- function(data) {
+  
+  excluded <- data[[3]]
+  
+  text <- "Excluded due to insufficient data: "
+  
+  for (c in excluded) {
+    
+    text <- paste0(text, c, ", ")
+    
+  }
+  
+  text <- paste0(substr(text,1,nchar(text)-2),".")
+  
+  if (length(excluded)==0) text <- ""
+  
+  return(text)
   
 }

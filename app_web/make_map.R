@@ -1,24 +1,9 @@
 make_map <- function(inputvar, inputcat, data) {
   
-  # Show a message if for a categorical variable no categories are selected
-  validate(
-    need(
-      (!is.null(inputcat) | class(ds[[inputvar]])=="numeric"), 
-      "Select at least one category"
-      )
-  )
-  
   #Variable class
   class <- data[[2]]
   #The dataframe
   data <- data[[1]]
-  
-  # Show a message if no countries are selected
-  validate(
-    need(
-      (sum(levels(data$Country) %in% levels(shp_20$NAME_ENGL)) > 0 ), 
-       "Select at least one country")
-  )
   
   #Setting the axis label depending on the type of variable
   if (class=="numeric") {x_label <- "Mean"} else {x_label <- "%"}
@@ -26,9 +11,7 @@ make_map <- function(inputvar, inputcat, data) {
   #Only keeping countries in the shapefile that are also in the data
   shp_20 <- shp_20 %>% 
     subset(Country %in% levels(data$Country)) 
-  #"#AACBE9"
-  #"#036D9C"
-  
+
   #This creates the color palette based on the EF styleguide
   #EF_aqua <- colorRampPalette(c("#AACBE9","#036D9C"))
   #EF colours are not working, using this color brewer gradient
@@ -51,10 +34,21 @@ make_map <- function(inputvar, inputcat, data) {
     pal <- colorBin(colors, domain=shp_20[[var]], bins=bins)
     
     #This creats the popup labels
-    labels <- sprintf(
-      "<strong>%s</strong><br/>%g",
-      shp_20$Country, round(shp_20[[var]],1)) %>% 
-      lapply(HTML)
+    #It shows 'insufficient data' in case the country has been excluded because of 
+    #a lack of data and the value otherwise.
+    labels <- {
+      
+      sprintf("<strong>%s</strong><br/>%s",
+                shp_20$Country, as.character(
+                  
+                  ifelse(is.na(shp_20[[var]]),
+                  "Insufficient data",
+                  round(shp_20[[var]],0))
+              
+              )
+      )
+      
+    } %>% lapply(HTML)
     
     #Setting the title and suffix of the legend depending on class
     if (class=="numeric") { 
@@ -106,7 +100,8 @@ make_map <- function(inputvar, inputcat, data) {
                 values = as.formula(paste("~",var)),
                 title = title,
                 labFormat = labelFormat(suffix = suffix),
-                opacity = 0.8) %>%
+                opacity = 0.8,
+                na.label = "Insufficient data") %>%
       #Sets the default view and zoom level
       setView(14,52.2, 4)
      

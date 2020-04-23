@@ -11,10 +11,13 @@ library(htmlwidgets)
 library(htmltools)
 library(rclipboard)
 
+#setwd(paste0(getwd(),"/app_web"))
+
 #URL where the app is iframed
 domain <- "https://eurofound.acc.fpfis.tech.ec.europa.eu/data/covid-19-survey-web-visualisation"
 
-#setwd(paste0(getwd(),"/app_web"))
+#Minimun number of cases for a category to be shown
+threshold <- 200
 
 # This is the full dataset that is loaded into the server
 load("data/ds.Rda")
@@ -64,7 +67,9 @@ source("make_description.R", local=TRUE)
 EF_colours <- list("#0D95D0", "#7DC462", "#E72F52", "#774FA0", "#EFB743", "#D44627")
 
 # Define UI 
-ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
+ui <- fluidPage(
+      title = "Eurofound Living, working and COVID-19 survey data visualisation",
+      theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
                 
       # This is a little piece of Javascript required for later. 
       tags$head( # refers to the head of the html document
@@ -157,11 +162,11 @@ ui <- fluidPage(theme = shinytheme("cerulean"), #The app fills the entire page. 
            #splitlayout evenly spreads the elements within the column    
            splitLayout(
                     
-             awesomeCheckboxGroup(
+             awesomeRadio(
                  inputId = "gender_filter",
                  label = "Gender", 
-                 choices = levels(ds$B002),
-                 selected = levels(ds$B002)),
+                 choices = c("All","Male","Female"),
+                 selected = "All"),
     
              awesomeCheckboxGroup(
                  inputId = "age_filter",
@@ -378,18 +383,19 @@ server <- function(input, output, session) {
     # Here the make_data function is called ('make_data.R') for each panel
     # It returns a list of a dataframe and a data class (numeric or factor)
     # These variables are used for the plot as well as for the download data function
+
     data_qol <- reactive(make_data(input$var_qol, input$breakdown_qol, input$cat_sel_qol, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter))
+                                   input$country_filter, input$empstat_filter, threshold))
     
     data_work <- reactive(make_data(input$var_work, input$breakdown_work, input$cat_sel_work, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter))
+                                   input$country_filter, input$empstat_filter, threshold))
     
     data_fin <- reactive(make_data(input$var_fin, input$breakdown_fin, input$cat_sel_fin, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter))
-    
+                                   input$country_filter, input$empstat_filter, threshold))
+
     # Calling the make_plot and make_map function for each tab
     # Both functions are in a seperate R file
     output$map_qol  <- renderLeaflet(make_map(input$var_qol, input$cat_sel_qol, data_qol()))
@@ -398,38 +404,6 @@ server <- function(input, output, session) {
     output$plot_work <- renderPlotly(make_plot(input$var_work, input$cat_sel_work, data_work()))
     output$map_fin  <- renderLeaflet(make_map(input$var_fin, input$cat_sel_fin, data_fin()))
     output$plot_fin <- renderPlotly(make_plot(input$var_fin, input$cat_sel_fin, data_fin()))
-    
-    # This throws a warning if user selects no countries or only 'other countries'
-    observe({ 
-      
-      # If the number of selected filters is zero
-      if (sum(input$country_filter %in% levels(ds$B001))==0) {
-        
-        sendSweetAlert(
-          session = session,
-          title = "Select at least one country",
-          type = "warning"
-        ) 
-        
-      }
-      
-      # or if it is one but only 'other country' (other country 
-      # cannot be plotted)
-      if (sum(input$country_filter %in% levels(ds$B001))==1) {
-        
-        if (input$country_filter=="Other country") {
-          
-          sendSweetAlert(
-            session = session,
-            title = "Select at least one country",
-            type = "warning"
-          ) 
-          
-        }
-        
-      }
-      
-    })
     
     # This function writes a ui part. Had to do this server side because it needs to choose
     # between a leafletoutput and a plotly output
@@ -476,50 +450,69 @@ server <- function(input, output, session) {
     output$plot_ui_fin <-  renderUI(make_plot_ui(input$breakdown_fin,  
                                                  input$chart_type_fin ,"map_fin","plot_fin"))
     
-    # Applying the make_description function to each tab
+    # Applying the make_description and make_excluded_text function to each tab
     # make_description is in 'make_description.R' and creates the little description 
     # of what is shown under the plot. This is rendered as text.
-    output$description_qol <- renderText(make_description(input$cat_sel_qol, input$var_qol))
-    output$description_work <- renderText(make_description(input$cat_sel_work, input$var_work))
-    output$description_fin <- renderText(make_description(input$cat_sel_fin, input$var_fin))
+    # For some reason the text doesnt update when switching breakdowns without the observe
+    observe({
+      
+      output$description_qol <- renderText(paste(make_description(input$cat_sel_qol, input$var_qol), 
+                                                   make_excluded_text(data_qol())))
+      output$description_work <- renderText(paste(make_description(input$cat_sel_work, input$var_work), 
+                                                    make_excluded_text(data_work())))
+      output$description_fin <- renderText(paste(make_description(input$cat_sel_fin, input$var_fin), 
+                                                   make_excluded_text(data_fin())))
+    })
     
     # The user has the option to download the data that was used to
     # create the plot. The make_data function that was called above prepares the data. 
     # This is used to create the plot and seperately its used by the download button.
+    output$downloadData_qol <-  downloadHandler(
+          filename = 'EF_data.csv',
+          content = function(con) {
+            
+            df <- data_qol()[[1]]
+            # Removing commas from the data for the download data function
+            colnames(df) <- gsub(",", "_", colnames(df))
+            
+            df <- df %>%
+              # And rounding to 0 decimals
+              mutate_if(is.numeric,round)
+            
+            write.csv(df, con)
+          }
+        )
+        
     
-    # Removing commas from the data for the download data function
-    data_qol_nocommas <- reactive({
-        df <- data_qol()[[1]]
-        colnames(df) <- gsub(",", "_", colnames(df))
-        return(df)
-        })
-    data_work_nocommas <- reactive({
+    output$downloadData_work <-  downloadHandler(
+      filename = 'EF_data.csv',
+      content = function(con) {
+        
         df <- data_work()[[1]]
         colnames(df) <- gsub(",", "_", colnames(df))
-        return(df)
-    })
-    data_fin_nocommas <- reactive({
+        
+        df <- df %>%
+          mutate_if(is.numeric,round)
+        
+        write.csv(df, con)
+      }
+    )
+    
+      
+    output$downloadData_fin <-  downloadHandler(
+      filename = 'EF_data.csv',
+      content = function(con) {
+        
         df <- data_fin()[[1]]
         colnames(df) <- gsub(",", "_", colnames(df))
-        return(df)
-    })
+        
+        df <- df %>%
+          mutate_if(is.numeric,round)
+        
+        write.csv(df, con)
+      }
+    )
     
-    # Function for downloading the data
-    downloaddata <- function(data) {
-
-        downloadHandler(
-            filename = 'EF_data.csv',
-            content = function(con) {
-                write.csv(data, con)
-            }
-        )
-    }
-    
-    # Outputs for the download data button
-    output$downloadData_qol <- downloaddata(data_qol_nocommas())
-    output$downloadData_work <- downloaddata(data_work_nocommas())
-    output$downloadData_fin <- downloaddata(data_fin_nocommas())
-
     # Here is the button to copy the URL for the plot configuration
     # Three different ones are made for each panel.
     # Add clipboard buttons
