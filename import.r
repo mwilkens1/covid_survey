@@ -94,7 +94,7 @@ ds$D002 = factor(ds$D002, levels=c("1","2","3"), labels=c("Yes, permanently","Ye
 ds$D003 = factor(ds$D003, levels=c("1","2","3","4","5"), labels=c("Decreased a lot","Decreased a little","Stayed the same","Increased a little","Increased a lot"), ordered=FALSE)
 ds$E004 = factor(ds$E004, levels=c("1","2","3"), labels=c("Better","The same","Worse"), ordered=TRUE)
 ds$E005 = factor(ds$E005, levels=c("1","2","3"), labels=c("Better","The same","Worse"), ordered=TRUE)
-ds$E006 = factor(ds$E006, levels=c("1","2","3","4","5"), labels=c("Less than 3 months","From 3 up to 6 months","From 6 up to 12 months","12 or more months","No savings"), ordered=FALSE)
+ds$E006 = factor(ds$E006, levels=c("5","1","2","3","4"), labels=c("No savings","Less than 3 months","From 3 up to 6 months","From 6 up to 12 months","12 or more months"), ordered=TRUE)
 ds$F004 = factor(ds$F004, levels=c("1","2","3"), labels=c("Primary","Secondary","Tertiary"), ordered=TRUE)
 ds$F005 = factor(ds$F005, levels=c("1","2","3"), labels=c("East Austria","South Austria","West Austria"), ordered=FALSE)
 ds$F006 = factor(ds$F006, levels=c("1","2","3"), labels=c("Brussels Capital Region","Flemish Region","Walloon Region"), ordered=FALSE)

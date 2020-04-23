@@ -198,6 +198,7 @@ server <- function(input, output, session) {
     # paramaters added to the url overrule any selections made in the app and 
     # automatically adjust them. This functionality is added so that links can be made
     # to specific plot configurations.
+    
     observe({
         
         #Querying the URL
@@ -279,8 +280,10 @@ server <- function(input, output, session) {
             }    
             
         }
-        
+
     })
+    
+    
     
     #This part constructs a URL with parameters that can be copied by the user 
     #to go back to the same exact plot configuration later

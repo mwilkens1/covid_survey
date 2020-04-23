@@ -24,7 +24,6 @@ make_panel <- function(panel_title,panel_code) {
                pickerInput(inputId = paste0("breakdown_",panel_code), 
                            label = "By",
                            choices = breakdown_list,
-                           selected = "Country",
                            width = "100%"
                            
                )),
