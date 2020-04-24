@@ -68,22 +68,7 @@ ui <- fluidPage(
       title = "Eurofound Living, working and COVID-19 survey data visualisation",
       theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
                 
-      # This is a little piece of Javascript required for later. 
       tags$head( # refers to the head of the html document
-        tags$script({ # start a javascript section in the html
-          
-          # Here a javascript array is created with all the names of the 
-          # factor variables in the form: ['name1','name2',...]
-          vars <- NULL
-          for (var in factors) {vars <- paste0(vars,"'",var,"'",',')}
-          
-          vars <- substr(vars, 1, nchar(vars)-1)
-          
-          #By pasting we get: 
-          # var factors = ['name1','name2',...]
-          paste0("var factors = [",vars,"];")
-          
-        }),
         #This CSS code is required to change the position and
         #formatting of the messsage box you get when you click
         #'copy link'. 
@@ -187,7 +172,32 @@ ui <- fluidPage(
 
 # Define server 
 server <- function(input, output, session) {
-
+    
+    # Creating te dropdown for selecting categories.
+    # This dropdown only shows if its a factor variable. 
+    # The user is supposed to select a category belonging 
+    # to the variable selected. 
+    make_cat_selector <- function(inputvar, panel_code) {
+      
+      if (inputvar %in% factors) {
+        
+        pickerInput(inputId = paste0("cat_sel_",panel_code), 
+                    label = "Select category", 
+                    choices = varinfo[[inputvar]]$levels,
+                    selected = varinfo[[inputvar]]$default_levels,
+                    multiple = TRUE,
+                    width = "100%")  
+        
+      }
+      
+    }
+    
+    output$cat_selector_qol <-  renderUI(make_cat_selector(input$var_qol, "qol"))
+    output$cat_selector_work <- renderUI(make_cat_selector(input$var_work, "work")) 
+    output$cat_selector_fin <-  renderUI(make_cat_selector(input$var_fin, "fin"))
+      
+  
+  
     # This section updates the categories with the categories relevant for the
     # selected question. Some questions have a 5 point likert scale while others 
     # are yes / no for example. 

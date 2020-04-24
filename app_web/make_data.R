@@ -6,7 +6,8 @@ make_data <- function(inputvar, breakdown, category,
                       country_filter,
                       empstat_filter,
                       threshold) {
-
+  print("make data")
+  
   #Series of messages in case a user selects too little inputs
   validate(
     need(

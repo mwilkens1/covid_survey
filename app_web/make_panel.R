@@ -44,22 +44,8 @@ make_panel <- function(panel_title,panel_code) {
                   # This dropdown only shows if its a factor variable. 
                   # The user is supposed to select a category belonging 
                   # to the variable selected. 
-                  conditionalPanel(
-                    #Here is where the javascript variable comes in. 
-                    #It checks whether the selected variable 
-                    #(input 'var_qol') is in the javascript array. 
-                    #If so, the extra dropdown is visible.
-                    condition = paste0("input.var_",panel_code,
-                                       " && factors.indexOf(input.var_",
-                                       panel_code,") > -1"),
-                    pickerInput(inputId = paste0("cat_sel_",panel_code), 
-                                label = "Select category", 
-                                choices = "",
-                                multiple = TRUE,
-                                width = "100%")
-                    
-                  )
-           
+                  uiOutput(paste0("cat_selector_",panel_code))
+                  
            ),
            
            column(width=3,
