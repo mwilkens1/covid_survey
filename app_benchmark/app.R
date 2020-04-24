@@ -18,7 +18,7 @@ load("data/ds.Rda")
 ds$w <- 1 
 
 # This is a list of 3 lists of variable names and labels
-load("data/varnames.rda")
+load("data/varinfo.rda")
 
 #Some style elements
 tabpanel_style <- "padding:20px;"
@@ -69,7 +69,19 @@ ui <- fillPage(theme = shinytheme("cerulean"),
                    
                    #Question selection
                    pickerInput(inputId = "var_qol", label = "Select question", 
-                     choices = varnames["Quality of life"],
+                               #This code gets the variable labels from varinfo so they can be the choices
+                               choices = {
+                               labels <- list.filter(varinfo, section=="Quality of life") %>%  list.mapv(label, use.names = FALSE)
+                               
+                               names <- as.list(names(list.filter(varinfo, section=="Quality of life")))
+                               
+                               names(names) <- labels
+                               
+                               choices = names
+                               
+                               },
+                               
+                     #choices = varnames["Quality of life"],
                      options = list(`live-search` = TRUE),
                      width = "100%"),
                   
@@ -93,7 +105,16 @@ ui <- fillPage(theme = shinytheme("cerulean"),
                    
                    #Question selection
                    pickerInput(inputId = "var_work", label = "Select question", 
-                               choices = varnames["Work and teleworking"],
+                               choices = {
+                                 labels <- list.filter(varinfo, section=="Work and teleworking") %>%  list.mapv(label, use.names = FALSE)
+                                 
+                                 names <- as.list(names(list.filter(varinfo, section=="Work and teleworking")))
+                                 
+                                 names(names) <- labels
+                                 
+                                 choices = names
+                                 
+                               },
                                options = list(`live-search` = TRUE),
                                width = "100%"),
                    
@@ -118,7 +139,16 @@ ui <- fillPage(theme = shinytheme("cerulean"),
                    
                    #Question selection
                    pickerInput(inputId = "var_fin", label = "Select question", 
-                               choices = varnames["Financial situation"],
+                               choices = {
+                                 labels <- list.filter(varinfo, section=="Financial situation") %>%  list.mapv(label, use.names = FALSE)
+                                 
+                                 names <- as.list(names(list.filter(varinfo, section=="Financial situation")))
+                                 
+                                 names(names) <- labels
+                                 
+                                 choices = names
+                                 
+                               },
                                options = list(`live-search` = TRUE),
                                width = "100%"),
                    

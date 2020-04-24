@@ -334,7 +334,7 @@ comment(ds$E003_06) = "Arrears: Payments for healthcare or health insurance"
 comment(ds$E004) = "Financial situation of household now compared to 3 months ago"
 comment(ds$E005) = "Expected financial situation of household in 3 months"
 comment(ds$E006) = "Without income, how long would your household be able to maintain the same standard of living using savings?"
-comment(ds$E007_01) = "Do you need to leave your accommodation within the next 6 months because you can no longer afford it?"
+comment(ds$E007_01) = "Do you think you will need to leave your accommodation within the next 6 months because you can no longer afford it?"
 comment(ds$E008_01) = "Support: If you needed help around the house when ill"
 comment(ds$E008_02) = "Support: If you needed advice about a serious personal or family matter"
 comment(ds$E008_03) = "Support: If you needed help when looking for a job"
@@ -414,11 +414,18 @@ for (var in num_vars) {
   
 }
 
-
-### IMPORT UNTIL HERE
-
+### IMPORT UNTIL HERE FOR DATASET
 
 
+
+
+
+
+### ----------------------- CREATING REFERENCE LISTS ------------------------------ ###
+
+## Here a list is created of the variable labels which takes as a value the variable name
+## E.g. 'my variable label' with value 'Q1'
+## this is needed because sometimes the app needs the label instead of the name
 make_varnames_list <- function(section) {
 
   varnames <- list()
@@ -444,77 +451,102 @@ names(varnames) <- c("Quality of life","Work and teleworking","Financial situati
 varnames[['Work and teleworking']][['Employment status']] <- NULL
 varnames[['Quality of life']][['Urbanisation']] <- NULL
 
-#Geting all factor levels
 
-#Getting list of all factor variables
-factors <- unlist(lapply(ds, is.factor))  
-factor_vars <- names(factors[factors==TRUE])
+##Here a list is created with all sorts of info per variable
 
-#For each factor store all levels
-levels_list <- list()
 
-for (var in factor_vars) {
+varinfo <- lapply(colnames(ds), function(x) { 
   
-  levels_list[var] <- list(levels(ds[[var]]))
+  list( # section
+    section = {if (startsWith(x, "C0")) {"Quality of life"} 
+      else if (startsWith(x, "D0")) {"Work and teleworking"}
+      else if (startsWith(x, "E0")) {"Financial situation"}
+      else {"other"}},
+    
+    # label will appear in the selection box
+    label = comment(ds[[x]]),
+    
+    # class of the variable
+    class = class(ds[[x]]),
+    
+    # any levels in case its a categorical variable
+    levels = levels(ds[[x]]),
   
-}
+    # default selected levels is initated
+    default_levels = NULL
+    
+    )
+  
+})
+
+names(varinfo) <- colnames(ds)
+
+
+# For every factor variable a set of default selected categories (in the the plot)
+# is defined and added to the list
+
 
 sel_levels_list <- levels_list
 
 for (var in c("C003_01","C003_02","C003_03","C003_04")) {
   
-  sel_levels_list[[var]] <- c("Strongly agree","Agree")
+  varinfo[[var]]$default_levels <- c("Strongly agree","Agree")
   
 }
 
-sel_levels_list[["C004_01"]] <- c("Very good","Good")
+varinfo[["C004_01"]]$default_levels <- c("Very good","Good")
 
 for (var in c("C005_01","C005_02","C005_03","C005_04","C005_05")) {
   
-  sel_levels_list[[var]] <- c("All of the time","Most of the time")
+  varinfo[[var]]$default_levels <- c("All of the time","Most of the time")
   
 }
 
 for (var in c("C006_01","C006_02","C006_03")) {
   
-  sel_levels_list[[var]] <- c("All of the time","Most of the time")
+  varinfo[[var]]$default_levels <- c("All of the time","Most of the time")
   
 }
 
-sel_levels_list[["D002"]] <- c("Yes, permanently","Yes, temporarily")
-sel_levels_list[["D003"]] <- c("Decreased a lot","Decreased a little")
+varinfo[["D002"]]$default_levels <- c("Yes, permanently","Yes, temporarily")
+varinfo[["D003"]]$default_levels <- c("Decreased a lot","Decreased a little")
 
 for (var in c("D004_01","D004_02","D004_03","D004_04","D004_05")) {
   
-  sel_levels_list[[var]] <- c("Always","Most of the time")
+  varinfo[[var]]$default_levels <- c("Always","Most of the time")
   
 }
 
-sel_levels_list[["D005_01"]] <- c("Every day","Every other day")
-sel_levels_list[["D006_01"]] <- c("Daily","Several times a week")
-sel_levels_list[["D007_01"]] <- c("Yes")
-sel_levels_list[["D008_01"]] <- c("Very likely","Rather likely")
-sel_levels_list[["E001_01"]] <- c("With great difficulty","With difficulty")
+varinfo[["D005_01"]]$default_levels <- c("Every day","Every other day")
+varinfo[["D006_01"]]$default_levels <- c("Daily","Several times a week")
+varinfo[["D007_01"]]$default_levels <- c("Yes")
+varinfo[["D008_01"]]$default_levels <- c("Very likely","Rather likely")
+varinfo[["E001_01"]]$default_levels <- c("With great difficulty","With difficulty")
 
 for (var in c("E002_01","E002_02","E003_01","E003_02","E003_03","E003_04","E003_05","E003_06")) {
   
-  sel_levels_list[[var]] <- "Yes"
+  varinfo[[var]]$default_levels <- "Yes"
   
 }
 
-sel_levels_list[["E004"]] <- "Worse"
-sel_levels_list[["E005"]] <- "Worse"
-sel_levels_list[["E006"]] <- c("No savings","Less than 3 months")
-sel_levels_list[["E007_01"]] <- c("Very likely","Rather likely")
+varinfo[["E004"]]$default_levels <- "Worse"
+varinfo[["E005"]]$default_levels <- "Worse"
+varinfo[["E006"]]$default_levels <- c("No savings","Less than 3 months")
+varinfo[["E007_01"]]$default_levels <- c("Very likely","Rather likely")
 
 
 for (var in c("E008_01","E008_02","E008_03","E008_04","E008_05","E008_06")) {
   
-  sel_levels_list[[var]] <- "Nobody"
+  varinfo[[var]]$default_levels <- "Nobody"
   
 }
 
-  
+# Some manual changes
+varinfo$C008$section <- "other"
+varinfo$D001$section <- "other"
+
+### ----------------------- RECODES ------------------------------ ###
+
 #Create age groups
 ds$age_group[ds$B003_01<35] <- "Under 35"
 ds$age_group[ds$B003_01>=35 & ds$B003_01<50] <- "35 - 49"
@@ -532,6 +564,9 @@ ds$emp_stat  <- recode(ds$D001,
                           "Full-time homemaker/fulfilling domestic tasks" = "Other",
                           "Student" = "Other") 
 
+
+### ----------------------- CLEANING ------------------------------ ###
+
 #Cleaning the data
 source("Cleaning_simple.R", local = TRUE)
 
@@ -539,7 +574,10 @@ ds <- ds %>%
   left_join(ds_clean[c("CASE","clean")], by="CASE")
 ds$clean[is.na(ds$clean)] <- FALSE
 
-#Prepare map
+### ----------------------- WEIGHTING ------------------------------ ###
+
+
+### ----------------------- PREPARE MAP ------------------------------ ###
 
 #Read in shapefile and select only relevant countries
 shp_20 <- readOGR("shapefiles","CNTR_RG_20M_2016_4326") %>% 
@@ -548,13 +586,14 @@ shp_20 <- readOGR("shapefiles","CNTR_RG_20M_2016_4326") %>%
 shp_20$NAME_ENGL <- droplevels(shp_20$NAME_ENGL)
 shp_20$Country <- shp_20$NAME_ENGL
 
+
+### ----------------------- SAVING ALL FILES ------------------------------ ###
+
 #Saving all the files
-save(varnames, file="app_benchmark/data/varnames.rda")
+save(varnames, file="app_benchmark/data/varinfo.rda")
 save(ds, file="app_benchmark/data/ds.Rda")
 
-save(varnames, file="app_web/data/varnames.rda")
 save(ds, file="app_web/data/ds.Rda")
-save(levels_list, file="app_web/data/levels_list.rda")
-save(sel_levels_list, file="app_web/data/sel_levels_list.rda")
+save(varinfo, file="app_web/data/varinfo.rda")
 
 save(shp_20, file = "app_web/data/shp_20.rda")

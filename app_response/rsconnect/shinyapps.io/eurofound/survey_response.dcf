@@ -1,0 +1,10 @@
+name: survey_response
+title:
+username:
+account: eurofound
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2177898
+bundleId: 3058974
+url: https://eurofound.shinyapps.io/survey_response/
+when: 1587723583.70969

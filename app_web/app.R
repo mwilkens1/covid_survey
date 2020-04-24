@@ -10,6 +10,7 @@ library(leafem)
 library(htmlwidgets)
 library(htmltools)
 library(rclipboard)
+library(rlist)
 
 #setwd(paste0(getwd(),"/app_web"))
 
@@ -24,15 +25,11 @@ load("data/ds.Rda")
 
 ds$w <- 1 
 
-# This is a list of 3 lists of variable names and labels
-load("data/varnames.rda")
+# Loading the list with al the variable info
+load("data/varinfo.rda")
 
-# List of all categories of each factor variable
-load("data/levels_list.rda")
-factors <- names(levels_list)
-
-#List of categories initially selected
-load("data/sel_levels_list.rda")
+# Creating vector of the names of factor variables
+factors <- names(list.filter(varinfo, "factor" %in% class))
 
 # Load the shapefile
 load("data/shp_20.rda")
@@ -219,7 +216,7 @@ server <- function(input, output, session) {
             #If not get the default preferred levels    
             } else {
                 
-                selected <- sel_levels_list[[inputvar]]
+                selected <- varinfo[[inputvar]]$default_levels
                 
             }
         
@@ -227,15 +224,15 @@ server <- function(input, output, session) {
         
         #Update the inputs by calling the functions
         updatePickerInput(session, inputId="cat_sel_qol",
-                          choices = levels_list[[input$var_qol]],
+                          choices = varinfo[[input$var_qol]]$levels,
                 selected = change_category("cat_sel_qol",input$var_qol))
     
         updatePickerInput(session, inputId="cat_sel_work",
-                          choices = levels_list[[input$var_work]],
+                          choices = varinfo[[input$var_work]]$levels,
                 selected = change_category("cat_sel_work",input$var_work))
     
         updatePickerInput(session, inputId="cat_sel_fin",
-                          choices = levels_list[[input$var_fin]],
+                          choices = varinfo[[input$var_fin]]$levels,
                 selected = change_category("cat_sel_fin",input$var_fin))
         
         #Update panel choice

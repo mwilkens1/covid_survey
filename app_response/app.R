@@ -98,7 +98,7 @@ server <- function(input, output, session) {
   progressSweetAlert(
     session = session, id = "load_data",
     title = "Fetching data",
-    display_pct = TRUE, value = 0
+    display_pct = TRUE, value = 20
   )
    
   source("import.r", local=TRUE)
@@ -246,9 +246,9 @@ server <- function(input, output, session) {
     
     data <- data.frame(table(data$B001,data$F004))
     
-    fig <- plot_ly(data[data$Var2=="Primary education",], x = ~Var1, y = ~Freq, type = 'bar', name = "Primary education")
-    fig <- fig %>% add_trace(data=data[data$Var2=="Secondary education",], y = ~Freq, name = "Secondary education")
-    fig <- fig %>% add_trace(data=data[data$Var2=="Tertiary education",], y = ~Freq, name = "Tertiary education")
+    fig <- plot_ly(data[data$Var2=="Primary",], x = ~Var1, y = ~Freq, type = 'bar', name = "Primary")
+    fig <- fig %>% add_trace(data=data[data$Var2=="Secondary",], y = ~Freq, name = "Secondary")
+    fig <- fig %>% add_trace(data=data[data$Var2=="Tertiary",], y = ~Freq, name = "Tertiary")
     fig <- fig %>% layout(yaxis=list(title="Responses", hoverformat='.0f'),
                           xaxis=list(title=NA), barmode="stack",
                           title=list(text="Full response by country and education", x = 0),
