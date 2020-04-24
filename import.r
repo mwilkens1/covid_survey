@@ -545,6 +545,15 @@ for (var in c("E008_01","E008_02","E008_03","E008_04","E008_05","E008_06")) {
 varinfo$C008$section <- "other"
 varinfo$D001$section <- "other"
 
+#Set an arbitrary string for numerical variables
+for (var in num_vars) {
+  
+  varinfo[[var]]$levels <- "None"
+  varinfo[[var]]$default_levels <- "None"
+  
+}
+
+
 ### ----------------------- RECODES ------------------------------ ###
 
 #Create age groups
@@ -590,7 +599,7 @@ shp_20$Country <- shp_20$NAME_ENGL
 ### ----------------------- SAVING ALL FILES ------------------------------ ###
 
 #Saving all the files
-save(varnames, file="app_benchmark/data/varinfo.rda")
+save(varinfo, file="app_benchmark/data/varinfo.rda")
 save(ds, file="app_benchmark/data/ds.Rda")
 
 save(ds, file="app_web/data/ds.Rda")

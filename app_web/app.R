@@ -173,31 +173,60 @@ ui <- fluidPage(
 # Define server 
 server <- function(input, output, session) {
     
+
+    
+    updated_qol <- reactiveVal(FALSE)
+    observeEvent(input$cat_sel_qol, updated_qol(TRUE))
+    observeEvent(input$var_qol, {
+      
+      if (("numeric" %in% varinfo[[input$var_qol]]$class) |
+          sum(input$cat_sel_qol %in% varinfo[[input$var_qol]]$levels)>0 ) 
+        {updated_qol(TRUE)} else {updated_qol(FALSE)}}
+    )
+    
+    updated_work <- reactiveVal(FALSE)
+    
+    observeEvent(input$cat_sel_work, updated_work(TRUE))
+    observeEvent(input$var_work, {
+      
+      if (("numeric" %in% varinfo[[input$var_work]]$class) |
+          sum(input$cat_sel_work %in% varinfo[[input$var_work]]$levels)>0 ) 
+      {updated_work(TRUE)} else {updated_work(FALSE)}}
+    )
+      
+    updated_fin <- reactiveVal(FALSE)
+    observeEvent(input$cat_sel_fin, updated_fin(TRUE))
+    observeEvent(input$var_fin, {
+      
+      if (("numeric" %in% varinfo[[input$var_fin]]$class) |
+        sum(input$cat_sel_fin %in% varinfo[[input$var_fin]]$levels)>0 ) 
+      {updated_fin(TRUE)} else {updated_fin(FALSE)}}
+    )
+    
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
     # The user is supposed to select a category belonging 
     # to the variable selected. 
     make_cat_selector <- function(inputvar, panel_code) {
-      
+    
       if (inputvar %in% factors) {
-        
+      
         pickerInput(inputId = paste0("cat_sel_",panel_code), 
                     label = "Select category", 
                     choices = varinfo[[inputvar]]$levels,
                     selected = varinfo[[inputvar]]$default_levels,
                     multiple = TRUE,
-                    width = "100%")  
+                    width = "100%") 
         
       }
       
     }
-    
+
     output$cat_selector_qol <-  renderUI(make_cat_selector(input$var_qol, "qol"))
     output$cat_selector_work <- renderUI(make_cat_selector(input$var_work, "work")) 
     output$cat_selector_fin <-  renderUI(make_cat_selector(input$var_fin, "fin"))
-      
-  
-  
+    
+
     # This section updates the categories with the categories relevant for the
     # selected question. Some questions have a 5 point likert scale while others 
     # are yes / no for example. 
@@ -289,8 +318,6 @@ server <- function(input, output, session) {
         }
 
     })
-    
-    
     
     #This part constructs a URL with parameters that can be copied by the user 
     #to go back to the same exact plot configuration later
@@ -389,31 +416,80 @@ server <- function(input, output, session) {
     })
 
     
-    
     # Here the make_data function is called ('make_data.R') for each panel
     # It returns a list of a dataframe and a data class (numeric or factor)
     # These variables are used for the plot as well as for the download data function
+    data_qol <- reactive({
 
-    data_qol <- reactive(make_data(input$var_qol, input$breakdown_qol, input$cat_sel_qol, 
+      req(updated_qol())
+
+      make_data(input$var_qol, input$breakdown_qol, input$cat_sel_qol, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter, threshold))
+                                   input$country_filter, input$empstat_filter, threshold)
+      
+      })
     
-    data_work <- reactive(make_data(input$var_work, input$breakdown_work, input$cat_sel_work, 
+    data_work <- reactive({
+      
+      req(updated_work())
+      
+      make_data(input$var_work, input$breakdown_work, input$cat_sel_work, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter, threshold))
+                                   input$country_filter, input$empstat_filter, threshold)
+      
+      })
     
-    data_fin <- reactive(make_data(input$var_fin, input$breakdown_fin, input$cat_sel_fin, 
+    data_fin <- reactive({
+      
+      req(updated_fin())
+      make_data(input$var_fin, input$breakdown_fin, input$cat_sel_fin, 
                                    input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter, threshold))
+                                   input$country_filter, input$empstat_filter, threshold)
+    })
 
     # Calling the make_plot and make_map function for each tab
     # Both functions are in a seperate R file
-    output$map_qol  <- renderLeaflet(make_map(input$var_qol, input$cat_sel_qol, data_qol()))
-    output$plot_qol <- renderPlotly(make_plot(input$var_qol, input$cat_sel_qol, data_qol()))
-    output$map_work  <- renderLeaflet(make_map(input$var_work, input$cat_sel_work, data_work()))
-    output$plot_work <- renderPlotly(make_plot(input$var_work, input$cat_sel_work, data_work()))
-    output$map_fin  <- renderLeaflet(make_map(input$var_fin, input$cat_sel_fin, data_fin()))
-    output$plot_fin <- renderPlotly(make_plot(input$var_fin, input$cat_sel_fin, data_fin()))
+    output$map_qol  <- renderLeaflet({
+      
+      req(updated_qol())
+      make_map(input$var_qol, input$cat_sel_qol, data_qol())
+      
+    })
+    
+    output$plot_qol <- renderPlotly({
+      
+      req(updated_qol())                                  
+      make_plot(input$var_qol, input$cat_sel_qol, data_qol())
+      
+     })
+    
+    output$map_work  <- renderLeaflet({
+      
+      req(updated_work())
+      make_map(input$var_work, input$cat_sel_work, data_work())
+      
+    })
+    
+    output$plot_work <- renderPlotly({
+      
+      req(updated_work())
+      make_plot(input$var_work, input$cat_sel_work, data_work())
+      
+    })
+    
+    output$map_fin  <- renderLeaflet({
+      
+      req(updated_fin())
+      make_map(input$var_fin, input$cat_sel_fin, data_fin())
+  
+    })
+    
+    output$plot_fin <- renderPlotly({
+     
+      req(updated_fin()) 
+      make_plot(input$var_fin, input$cat_sel_fin, data_fin())
+      
+    })
     
     # This function writes a ui part. Had to do this server side because it needs to choose
     # between a leafletoutput and a plotly output

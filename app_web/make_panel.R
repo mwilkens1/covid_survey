@@ -9,22 +9,23 @@ make_panel <- function(panel_title,panel_code) {
              
              #Question selection
              column(width=12,
-                    pickerInput(inputId = paste0("var_",panel_code), 
-                                label = "Select question", 
-                                choices = {
-                                  
-                                  labels <- list.filter(varinfo, section==panel_title) %>%  list.mapv(label, use.names = FALSE)
-                                  
-                                  names <- as.list(names(list.filter(varinfo, section==panel_title)))
-                                  
-                                  names(names) <- labels
-                                  
-                                  choices = names
-                                  
-                                } ,
-                                #choices = varnames[panel_title],
-                                options = list(`live-search` = TRUE),
-                                width = "100%"))
+                      pickerInput(inputId = paste0("var_",panel_code), 
+                                 label = "Select question", 
+                                 choices = {
+                                   
+                                   labels <- list.filter(varinfo, section==panel_title) %>%  list.mapv(label, use.names = FALSE)
+                                     
+                                   names <- as.list(names(list.filter(varinfo, section==panel_title)))
+                                     
+                                   names(names) <- labels
+                                     
+                                   choices = names
+                                     
+                                  } ,
+                                  options = list(`live-search` = TRUE),
+                                  width = "100%")
+                   
+                    )
            ),
            
            fluidRow(
@@ -94,9 +95,3 @@ make_panel <- function(panel_title,panel_code) {
   )
   
 }
-
-
-
-
-labels <- lapply(labels, function(x) x)
-

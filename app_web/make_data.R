@@ -6,12 +6,19 @@ make_data <- function(inputvar, breakdown, category,
                       country_filter,
                       empstat_filter,
                       threshold) {
-  print("make data")
+  
+  # catforprint <- ""
+  # for (c in category) {
+  #   
+  #   catforprint <- paste0(catforprint, c, " ")
+  # }
+  # 
+  # print(paste0("data: ",inputvar,", cats: ",catforprint))
   
   #Series of messages in case a user selects too little inputs
   validate(
     need(
-      (!is.null(category) | class(ds[[inputvar]])=="numeric"), 
+      (!is.null(category) | "numeric" %in% varinfo[[inputvar]]$class), 
       "Please select at least one category")
   )
   
