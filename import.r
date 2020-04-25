@@ -464,13 +464,24 @@ varinfo <- lapply(colnames(ds), function(x) {
     levels = levels(ds[[x]]),
   
     # default selected levels is initated
-    default_levels = NULL
+    default_levels = NULL,
+    
+    # Special axis range for numerical variables
+    range = NULL
     
     )
   
 })
 
 names(varinfo) <- colnames(ds)
+
+#Specifying special axis ranges
+for (var in c("C001_01","C002_01","C007_01","C007_02",
+             "C007_03","C007_04","C007_05")) {
+  
+  varinfo[[var]]$range <- c(1,10)
+  
+}
 
 #defining the breakdown variables
 varinfo[["B001"]]$section <- "breakdown"
@@ -570,7 +581,9 @@ ds <- filter(ds, clean==TRUE)
 
 source("weighting_by_country.R",local=TRUE)
 
-weights <- weigh_data(ds)
+weights <- weigh_data(ds, minimum_weight = 0.05,
+                      trim_lower = 0.16,
+                      trim_upper = 6)
 
 ds <- weights %>%
   select(CASE, w_gross_trim) %>%

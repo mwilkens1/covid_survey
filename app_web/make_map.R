@@ -116,14 +116,7 @@ make_map <- function(data) {
   } else {
     
     #If categorical... 
-    cnames <- colnames(data)[2:length(colnames(data))]
-    
-    #... sum the percentages of the selected categories
-    data <- data %>% 
-      mutate(sum = rowSums(.[cnames])) 
-    
-    #And pass on 'sum' as the variable to the function
-    fig <- draw_map("sum")
+    fig <- draw_map("Total")
     
   }
   

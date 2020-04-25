@@ -73,7 +73,7 @@ make_panel <- function(panel_title,panel_code) {
              )
            ),
            
-           fluidRow(
+           fluidRow(style="margin-top: 10px",
              
              column(width=8,
                   

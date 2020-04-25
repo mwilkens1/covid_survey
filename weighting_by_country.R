@@ -1,4 +1,4 @@
-weigh_data <- function(ds) {
+weigh_data <- function(ds, minimum_weight, trim_lower, trim_upper) {
 
     ##Randomise third gender category and don't knows
     
@@ -86,12 +86,6 @@ weigh_data <- function(ds) {
     ds_w <- ds[vars]
     
     
-    #split_file into country files
-    
-    #for (country in unique(ds_w$country)) { 
-    #  write.csv(ds_w[ds_w$country == country,], file = paste0("w_", country, ".csv")) 
-    #}
-    
     #Creating a list of country files
     country_names <- as.vector(unique(ds_w$country))
     
@@ -104,19 +98,9 @@ weigh_data <- function(ds) {
     
     
     ##reading target data
-    #Other country takes Switzerland data and 50% rural 50% tertiary
-    
+
     targets <-read.csv("weighting_data/target_all_clean_alt.csv")
-    
-    #Rename strang variable name
-    colnames(targets)[1] <- "i"
-    
-    #split target file
-    
-    #for (country in unique(targets$country)) { 
-    #  write.csv(targets[targets$country == country,], file = paste0("t_", country, ".csv")) 
-    #}
-    
+  
     country_targets <- lapply(country_names, function(country) {
       
       targets[targets$country == country,]
@@ -126,38 +110,40 @@ weigh_data <- function(ds) {
     
     #Creating a list of paramters per country
     
-    country_params <- list(
-      
-      "Austria"         = list("cap" = 100),
-      "Belgium"         = list("cap" = 100),
-      "Bulgaria"        = list("cap" = 100),
-      "Croatia"         = list("cap" = 100),
-      "Cyprus"          = list("cap" = 100),
-      "Czechia"         = list("cap" = 6),
-      "Denmark"         = list("cap" = 100),
-      "Estonia"         = list("cap" = 6),
-      "Finland"         = list("cap" = 6),
-      "France"          = list("cap" = 6),
-      "Germany"         = list("cap" = 100),
-      "Greece"          = list("cap" = 100),  
-      "Hungary"         = list("cap" = 6),
-      "Ireland"         = list("cap" = 6),
-      "Italy"           = list("cap" = 6),
-      "Latvia"          = list("cap" = 100),
-      "Lithuania"       = list("cap" = 100), 
-      "Luxembourg"      = list("cap" = 100),
-      "Malta"           = list("cap" = 6),
-      "Netherlands"     = list("cap" = 100),
-      "Poland"          = list("cap" = 100),
-      "Portugal"        = list("cap" = 100),
-      "Romania"         = list("cap" = 100),
-      "Slovakia"        = list("cap" = 6),
-      "Slovenia"        = list("cap" = 6),
-      "Spain"           = list("cap" = 100),
-      "Sweden"          = list("cap" = 100),
-      "United Kingdom"  = list("cap" = 100)
-      
-    )
+    # country_params <- list(
+    #   
+    #   "Austria"         = list("cap" = 6),
+    #   "Belgium"         = list("cap" = 6),
+    #   "Bulgaria"        = list("cap" = 6),
+    #   "Croatia"         = list("cap" = 6),
+    #   "Cyprus"          = list("cap" = 6),
+    #   "Czechia"         = list("cap" = 6),
+    #   "Denmark"         = list("cap" = 6),
+    #   "Estonia"         = list("cap" = 6),
+    #   "Finland"         = list("cap" = 6),
+    #   "France"          = list("cap" = 6),
+    #   "Germany"         = list("cap" = 6),
+    #   "Greece"          = list("cap" = 6),  
+    #   "Hungary"         = list("cap" = 6),
+    #   "Ireland"         = list("cap" = 6),
+    #   "Italy"           = list("cap" = 6),
+    #   "Latvia"          = list("cap" = 6),
+    #   "Lithuania"       = list("cap" = 6), 
+    #   "Luxembourg"      = list("cap" = 6),
+    #   "Malta"           = list("cap" = 6),
+    #   "Netherlands"     = list("cap" = 6),
+    #   "Poland"          = list("cap" = 6),
+    #   "Portugal"        = list("cap" = 6),
+    #   "Romania"         = list("cap" = 6),
+    #   "Slovakia"        = list("cap" = 6),
+    #   "Slovenia"        = list("cap" = 6),
+    #   "Spain"           = list("cap" = 6),
+    #   "Sweden"          = list("cap" = 6),
+    #   "United Kingdom"  = list("cap" = 6)
+    #   
+    # )
+    
+    set.seed(1)
     
     #### Applying raking function to each country ###
     weights <- lapply(country_names, function(country) {
@@ -168,16 +154,49 @@ weigh_data <- function(ds) {
         education = wpct(education, population)
       ))
       
-      print(country)
-      raking <-     anesrake(w_target,
-                             country_data[[country]],
-                             country_data[[country]]$CASE,
-                             cap=country_params[[country]]$cap,
-                             choosemethod = "total",
-                             type = "pctlim",
-                             pctlim = 0.05
-       )
+      print(paste("<<--------------",country,"-------------->>"))
+      
+      cap <- 4
+      convergence <- FALSE
+      while (convergence==FALSE) {
+        
+        raking <-     anesrake(w_target,
+                               country_data[[country]],
+                               country_data[[country]]$CASE,
+                               cap=cap,
+                               choosemethod = "total",
+                               type = "pctlim",
+                               pctlim = 0.05
+         )
+      
+        if (raking$converge=="Complete convergence was achieved" &
+            min(raking$weightvec)>minimum_weight) {
+          
+          convergence <- TRUE
+          print(paste("<<-------------- Convergence at cap: ", cap," -------------->>"))
+          
+        } else if (raking$converge=="Complete convergence was achieved") {
+          
+          print("<<-------------- Convergence, but too small weights -------------->>")
+          cap <- cap + 1
+          print(paste("<<-------------- Cap increased to: ", cap," -------------->>"))
+          
+        } else {
+          
+          cap <- cap + 1
+          print(paste("<<-------------- Cap increased to: ", cap," -------------->>"))
+          
+        }
+      
+      }
+     
       country_data[[country]]$w <- raking$weightvec
+      
+      country_data[[country]]$cap <- cap
+      
+      country_data[[country]]$trimmed <- "OK"
+      country_data[[country]]$trimmed[country_data[[country]]$w<0.16] <- "Too low"
+      country_data[[country]]$trimmed[country_data[[country]]$w>6] <- "Too high"
       
       #Adding the targets
       country_data[[country]] <- country_data[[country]] %>%
@@ -186,13 +205,13 @@ weigh_data <- function(ds) {
       
       #Trimming the weights
       ds_svy <- svydesign(id=~CASE, 
-                          strata=~i, 
+                          strata=~strata, 
                           weights=~w, 
                           data=country_data[[country]], 
                           fpc=~population)
       
       #trim weights
-      ds_trim <-trimWeights(ds_svy, lower=0.16, upper=6, strict=TRUE)
+      ds_trim <-trimWeights(ds_svy, lower=trim_lower, upper=trim_upper, strict=TRUE)
       
       #store trimmed weights
       country_data[[country]]$w_trimmed <- weights(ds_trim)
@@ -209,6 +228,16 @@ weigh_data <- function(ds) {
       
     }) 
     names(weights) <- country_names
+    
+    
+    #print the final cap used
+    lapply(country_names, function(country) {
+      
+      print(paste(country,": ",max(weights[[country]]$cap)))
+      print(table(weights[[country]]$trimmed))
+      
+    })
+    
     
     #Merging into one dataframe
     weights <- do.call("rbind",weights)

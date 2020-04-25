@@ -3,6 +3,8 @@ make_plot <- function(data) {
 
   #Variable class
   class <- data[[2]]
+  #Range of the axis
+  range <- data[[4]]
   #The dataframe
   data <- data[[1]] %>%
     droplevels()
@@ -26,10 +28,10 @@ make_plot <- function(data) {
     order <- data[order(-data$Mean),]
     
   } else {
-    
+
     # if categorical, loop over the categories adding a trace each time
-    cnames <- colnames(data)[2:length(colnames(data))]
-    
+    cnames <- colnames(data)[2:(length(colnames(data))-1)]
+
     for (cname in cnames) {
       
       fig <- fig %>% add_trace(y=data[[1]], x = data[[cname]], 
@@ -38,9 +40,7 @@ make_plot <- function(data) {
     }
   
     # To order the plot, we need to specify its ordering in an array
-    order <- data %>%
-      mutate(sum = rowSums(.[cnames]))
-    order <- order[order(-order$sum),]  
+    order <- data[order(-data$Total),]  
     
   }
   
@@ -69,6 +69,16 @@ make_plot <- function(data) {
                              sizey = 0.15,
                              opacity = 0.6))
                         )
+  
+  #Adding custom range for the x-axis if a range exists
+  if (!is.null(range) & class=="numeric") {
+
+    fig <- fig %>% layout(xaxis = 
+              list(range = c(range[1],
+                             ceiling(max(data$Mean)))
+                   ))
+      
+  }
   
   #Removing buttons from the modebar
   fig <- fig %>% config(modeBarButtonsToRemove = c("zoom2d", "zoomIn2d", "zoomOut2d","pan2d",

@@ -47,7 +47,7 @@ make_data <- function(inputvar, breakdown, category,
   )
   
   #Retrieving the class of the variable to determine whether its numeric or factor
-  class <- class(ds[[inputvar]])[length(class(ds[[inputvar]]))]
+  class <- varinfo[[inputvar]]$class[length(varinfo[[inputvar]]$class)]
   #Get the label of the breakdown variable
   label_breakdown <- names(breakdown_list)[match(breakdown,breakdown_list)]
   #Count the number of selected categories
@@ -162,6 +162,10 @@ make_data <- function(inputvar, breakdown, category,
       # ... reduce the list of dataframes to 1 dataframe with different columns
       df <- df %>% reduce(left_join, by=label_breakdown)    
       
+      # Calculate 'total' column
+      
+      df <- df %>% mutate(Total = rowSums(.[2:ncol(df)]))
+      
     # If only 1 category
     } else {
       
@@ -175,10 +179,7 @@ make_data <- function(inputvar, breakdown, category,
     excluded <- calc_data({ds %>%
                             mutate(!!category[1] := as.numeric(!!sym(inputvar) == category[1]) * 100)},
                             category[1],category[1])[[2]]
-    
-    #Range is stored to set the axis range later. This does not apply to categorical variables
-    range <- NULL
-    
+
   #If a numeric variable then just run the function once  
   } else {
     
@@ -191,11 +192,15 @@ make_data <- function(inputvar, breakdown, category,
     
   }    
   
+  #Get plot axis range
+  range <- varinfo[[inputvar]]$range
+  
   #Finally, store in a list:
   # - dataframe
   # - class of the inputvariable
   # - vector of excluded breakdown categories
-  df <- list(df, class, excluded)
+  # - any special range for plot axis
+  df <- list(df, class, excluded, range)
   
   return(df)
 
