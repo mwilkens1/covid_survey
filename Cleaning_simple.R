@@ -15,7 +15,7 @@ ds_clean <- ds_clean[!(ds_clean$TIME_SUM<180),]
 
 ## Age
 
-ds_clean <- ds_clean[!(ds_clean$B003_01>98,]
+ds_clean <- ds_clean[!(ds_clean$B003_01>98),]
 
 
 ##Tertiary education

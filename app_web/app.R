@@ -23,8 +23,6 @@ threshold <- 200
 # This is the full dataset that is loaded into the server
 load("data/ds.Rda")
 
-ds$w <- 1 
-
 # Loading the list with al the variable info
 load("data/varinfo.rda")
 
@@ -39,9 +37,7 @@ breakdown_list <- list("Country" = "B001",
                        "Gender" = "B002",
                        "Age" = "age_group",
                        "Employment status" = "emp_stat",
-                       "Education" = "F004"
-                       #Add household type?
-                       )
+                       "Education" = "F004")
 
 #Loading function that creates a panel (tab) in the main body of the app. Because they are all 
 #identical I use a function that I call 3 times. Each tab represents a topic:
@@ -452,42 +448,42 @@ server <- function(input, output, session) {
     output$map_qol  <- renderLeaflet({
       
       req(updated_qol())
-      make_map(input$var_qol, input$cat_sel_qol, data_qol())
+      make_map(data_qol())
       
     })
     
     output$plot_qol <- renderPlotly({
       
       req(updated_qol())                                  
-      make_plot(input$var_qol, input$cat_sel_qol, data_qol())
+      make_plot(data_qol())
       
      })
     
     output$map_work  <- renderLeaflet({
       
       req(updated_work())
-      make_map(input$var_work, input$cat_sel_work, data_work())
+      make_map(data_work())
       
     })
     
     output$plot_work <- renderPlotly({
       
       req(updated_work())
-      make_plot(input$var_work, input$cat_sel_work, data_work())
+      make_plot(data_work())
       
     })
     
     output$map_fin  <- renderLeaflet({
       
       req(updated_fin())
-      make_map(input$var_fin, input$cat_sel_fin, data_fin())
+      make_map(data_fin())
   
     })
     
     output$plot_fin <- renderPlotly({
      
       req(updated_fin()) 
-      make_plot(input$var_fin, input$cat_sel_fin, data_fin())
+      make_plot(data_fin())
       
     })
     

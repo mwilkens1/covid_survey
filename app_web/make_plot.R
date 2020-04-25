@@ -1,5 +1,5 @@
 #Function for making the plot
-make_plot <- function(inputvar, inputcat, data) {
+make_plot <- function(data) {
 
   #Variable class
   class <- data[[2]]
@@ -11,6 +11,7 @@ make_plot <- function(inputvar, inputcat, data) {
   #Setting the axis label depending on the type of variable
   if (class=="numeric") {x_label <- "Mean"} else {x_label <- "%"}
     
+  breakdown <- colnames(data)[1]
   colnames(data)[1] <- "bdown"
   
   #Making the plot
@@ -20,6 +21,9 @@ make_plot <- function(inputvar, inputcat, data) {
   if (class=="numeric") {
 
     fig <- fig %>% add_trace(y=data[[1]], x = ~Mean, name = 'Mean', data=data, type='bar')
+    
+    # To order the plot, we need to specify its ordering in an array
+    order <- data[order(-data$Mean),]
     
   } else {
     
@@ -32,13 +36,26 @@ make_plot <- function(inputvar, inputcat, data) {
                                name = cname, data=data, type='bar')    
       
     }
+  
+    # To order the plot, we need to specify its ordering in an array
+    order <- data %>%
+      mutate(sum = rowSums(.[cnames]))
+    order <- order[order(-order$sum),]  
+    
+  }
+  
+  if (breakdown!="Country") {
+    
+    order <- data[[1]]
     
   }
   
   #Add layout elements
   fig <- fig %>% layout(xaxis = list(title = x_label,
                                      hoverformat='.0f'), 
-                        yaxis=list(title=NA, autorange="reversed"),
+                        yaxis=list(title=NA, autorange="reversed",
+                                   categoryorder = "array",
+                                   categoryarray = order[[1]]),
                         barmode = 'stack',
                         hovermode = 'compare',
                         colorway=EF_colours,

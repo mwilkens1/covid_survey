@@ -1,6 +1,5 @@
-make_map <- function(inputvar, inputcat, data) {
+make_map <- function(data) {
 
-  # print(paste0("map: ",inputvar))
   #Variable class
   class <- data[[2]]
   #The dataframe
