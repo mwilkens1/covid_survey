@@ -15,7 +15,29 @@ ds_clean <- ds_clean[!(ds_clean$TIME_SUM<180),]
 
 ## Age
 
-ds_clean <- ds_clean[!(ds_clean$B003_01>98 & ds_clean$STARTED<"2020-04-10 17:00:00"),]
+ds_clean <- ds_clean[!(ds_clean$B003_01>98,]
+
+
+##Tertiary education
+
+primary <- (ds_clean$F004=="Primary")
+secondary <- (ds_clean$F004=="Secondary")
+tertiary <- (ds_clean$F004=="Tertiary")
+edu_na <- is.na(ds_clean$F004)
+under21 <- (ds_clean$B003_01<21)
+over21 <- (ds_clean$B003_01>20)
+
+ds_clean$youngtertiary <- case_when (tertiary & under21 ~ 1,
+                               primary ~ 0,
+                               secondary ~ 0,
+                               edu_na ~ 0,
+                               over21 ~ 0)
+ds_clean <- mutate(ds_clean, F004 = ifelse(youngtertiary == 1, 2, F004))
+ds_clean$F004 <- factor(ds_clean$F004,
+                  levels = c(1,2,3),
+                  labels = c("Primary", "Secondary", "Tertiary"))
+drops <- "youngtertiary"
+ds_clean <- ds_clean[, ! names(ds_clean) %in% drops, drop = F]
 
 ##Contradiction
 
