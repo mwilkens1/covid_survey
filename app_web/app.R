@@ -11,6 +11,7 @@ library(htmlwidgets)
 library(htmltools)
 library(rclipboard)
 library(rlist)
+library(shinyjs)
 
 #setwd(paste0(getwd(),"/app_web"))
 
