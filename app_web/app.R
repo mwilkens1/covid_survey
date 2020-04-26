@@ -29,15 +29,13 @@ load("data/varinfo.rda")
 # Creating vector of the names of factor variables
 factors <- names(list.filter(varinfo, "factor" %in% class))
 
-# Load the shapefile
-load("data/shp_20.rda")
-
 #Creating a list of named breakdowns
 breakdown_list <- list("Country" = "B001",
                        "Gender" = "B002",
-                       "Age" = "age_group",
-                       "Employment status" = "emp_stat",
-                       "Education" = "F004")
+                       "Age" = "age_group")
+
+# Load the shapefile
+load("data/shp_20.rda")
 
 #Loading function that creates a panel (tab) in the main body of the app. Because they are all 
 #identical I use a function that I call 3 times. Each tab represents a topic:
@@ -63,6 +61,8 @@ EF_colours <- list("#0D95D0", "#7DC462", "#E72F52", "#774FA0", "#EFB743", "#D446
 ui <- fluidPage(
       title = "Eurofound Living, working and COVID-19 survey data visualisation",
       theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
+      
+      useShinyjs(),
                 
       tags$head( # refers to the head of the html document
         #This CSS code is required to change the position and
@@ -127,19 +127,21 @@ ui <- fluidPage(
                             width = "100%"
                 ),
                 
+                hidden(
                 pickerInput(inputId = "empstat_filter", label = "Employment status", 
                             choices = levels(ds$emp_stat),
                             selected = levels(ds$emp_stat),
                             options = list(`actions-box` = TRUE),
                             multiple = TRUE,
                             width = "100%"
+                )
                 )),
          
          column(7,
            #splitlayout evenly spreads the elements within the column    
            splitLayout(
                     
-             awesomeRadio(
+            awesomeRadio(
                  inputId = "gender_filter",
                  label = "Gender", 
                  choices = c("All","Male","Female"),
@@ -151,11 +153,13 @@ ui <- fluidPage(
                  choices = levels(ds$age_group),
                  selected = levels(ds$age_group)),
     
+             hidden(
              awesomeCheckboxGroup(
                  inputId = "education_filter",
                  label = "Education", 
                  choices = levels(ds$F004),
                  selected = levels(ds$F004))
+             )
            )
         )
      )
@@ -168,6 +172,14 @@ ui <- fluidPage(
 # Define server 
 server <- function(input, output, session) {
     
+  
+  #  if (is.null(query[["unhide"]])) {
+      
+
+      
+   # } 
+    
+  
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
     # The user is supposed to select a category belonging 
@@ -453,6 +465,31 @@ server <- function(input, output, session) {
           
         }
         
+      }
+      
+      #Enables extra filters and breakdowns
+      if (!is.null(query[["unhide"]])) {
+        
+        if (query[["unhide"]]=="true") {
+             
+             show("education_filter")
+             show("empstat_filter")
+             
+             breakdown_list_full <- list("Country" = "B001",
+                                    "Gender" = "B002",
+                                    "Age" = "age_group",
+                                    "Employment status" = "emp_stat",
+                                    "Education" = "F004")
+             
+             updatePickerInput(session,inputId="breakdown_qol",
+                               choices = breakdown_list_full)
+             updatePickerInput(session,inputId="breakdown_work",
+                               choices = breakdown_list_full)
+             updatePickerInput(session,inputId="breakdown_fin",
+                               choices = breakdown_list_full)
+             
+             
+         }
       }
       
       #Update the inputs by calling the functions
