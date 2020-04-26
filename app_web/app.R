@@ -270,8 +270,7 @@ server <- function(input, output, session) {
                     choices = varinfo[[var]]$levels,
                     selected = varinfo[[var]]$default_levels,
                     multiple = TRUE,
-                    width = "100%",
-                    options = list(mobile=TRUE)) 
+                    width = "100%") 
         
       }
       
