@@ -170,7 +170,7 @@ make_data <- function(inputvar, breakdown, category,
     } else {
       
       #Just pick the only dataframe in hte list
-      df <- df[[1]]
+      df <- df[[1]] %>% mutate(Total = rowSums(.[2:ncol(df[[1]])]))
       
     }
 
