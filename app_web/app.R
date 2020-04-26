@@ -239,9 +239,17 @@ ui <- fluidPage(
                  choices = levels(ds$F004),
                  selected = levels(ds$F004))
              )
+            
            )
-        )
-     )
+          ),
+         
+         a(href="https://github.com/mwilkens1/covid_survey/",
+           img(style="position: absolute; right: 0px; bottom: 0px",
+               src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+               align="right",
+               height=30))
+      )
+   )
 )
 
 
