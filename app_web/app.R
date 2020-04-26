@@ -64,7 +64,7 @@ ui <- fluidPage(
       theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
       
       useShinyjs(),
-                
+
       tags$head( # refers to the head of the html document
         #This CSS code is required to change the position and
         #formatting of the messsage box you get when you click
@@ -172,14 +172,6 @@ ui <- fluidPage(
 
 # Define server 
 server <- function(input, output, session) {
-    
-  
-  #  if (is.null(query[["unhide"]])) {
-      
-
-      
-   # } 
-    
   
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
@@ -337,7 +329,7 @@ server <- function(input, output, session) {
             chart_type=="Map") {
             
             #Make the map
-            leafletOutput(mapoutput, height="600px") %>% withSpinner()
+            leafletOutput(mapoutput, height="600px")  %>% withSpinner() 
         
         # in all other cases make the plotly with different heights
         # depending on the breakdown used
@@ -358,7 +350,7 @@ server <- function(input, output, session) {
             }
             
             #and make the plotly
-            plotlyOutput(plotoutput, height=height) %>% withSpinner()
+            plotlyOutput(plotoutput, height=height)  %>% withSpinner() 
             
         }
         
@@ -711,7 +703,7 @@ server <- function(input, output, session) {
     observeEvent(input$clipbtn_fin, {
       showNotification("Link copied to clipboard",type="warning")
     })
-    
+
 }
 
 # Run the application 
