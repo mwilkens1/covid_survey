@@ -58,16 +58,35 @@ source("make_description.R", local=TRUE)
 #EF colour scheme
 EF_colours <- list("#0D95D0", "#7DC462", "#E72F52", "#774FA0", "#EFB743", "#D44627")
 
+sections <- c("Quality of life","Work and teleworking","Financial situation")
+
+variables <- lapply(sections, function(s) {
+
+  labels <- list.filter(varinfo, section==s) %>%  list.mapv(label, use.names = FALSE)
+  
+  names <- as.list(names(list.filter(varinfo, section==s)))
+  
+  names(names) <- labels
+  
+  return(names)
+  
+})
+
+names(variables) <- sections
+
+
 # Define UI 
 ui <- fluidPage(
       title = "Eurofound Living, working and COVID-19 survey data visualisation",
       theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
       
+      # Activate shiny javascript
       useShinyjs(),
 
       tags$head( # refers to the head of the html document
         #This CSS code is required to change the position and
         #formatting of the messsage box you get when you click
+        #Also it makes sure that the variable selection is on top of the leaflet legend
         #'copy link'. 
         tags$style(
           HTML(".shiny-notification {
@@ -76,41 +95,100 @@ ui <- fluidPage(
              right: calc(0%);
              background-color: #00b462;
              color: #ffffff;
-             }
-             "
-          )
+          }
+          
+           .leaflet-top, .leaflet-bottom {
+             z-index: unset !important;
+           }
+           
+           .leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar .leaflet-control-zoom {
+             z-index: 10000000000 !important;
+           }
+          ")
         )),                
                 
      #necessary for the clipboard button
      rclipboardSetup(),
-      
-     #Here the actual layout of the page starts  
-     fluidRow(   
-         
-       column(12,
-         
-        tabsetPanel(id="tab",#this starts the set of tabs
-            
-            #The tabsetpanel set up makes things a little complicated because
-            #there are now three different widgets for selecting questions 
-            #who all have a different set of questions. So a lot of things server
-            #side need to to be run for each panel.
-            #See 'make_panel.R'
-            
-            #First tab
-            make_panel("Quality of life","qol"),
-            
-            #second tab
-            make_panel("Work and teleworking", "work"),
-            
-            #third tab                 
-            make_panel("Financial situation", "fin")
-            
-        )  
-        
-       )
-     ),
      
+     fluidRow(
+        
+        #Question selection
+        column(width=12,
+               
+           pickerInput(inputId = "var", 
+                       label = "Select question", 
+                       choices = variables,
+                       options = list(`live-search` = TRUE,  
+                                      size = 25),
+                       width = "100%")
+           
+               
+        )
+      ),
+      
+      fluidRow(
+        
+        column(width=3,
+               
+               # Breakdown widget
+               pickerInput(inputId = "breakdown", 
+                           label = "By",
+                           choices = breakdown_list,
+                           width = "100%"
+                           
+               )),
+        
+        column(width=6,
+               
+               # This dropdown only shows if its a factor variable. 
+               # The user is supposed to select a category belonging 
+               # to the variable selected. 
+               uiOutput("cat_selector")
+               
+        ),
+        
+        column(width=3,
+               
+               #Conditional panel that lets you choose map or bar
+               #It only shows up if country is selected as breakdown
+               conditionalPanel(
+                 condition =  "input.breakdown == 'B001'"),
+                 pickerInput(inputId = "chart_type", label = "Chart type", 
+                             choices = c("Map","Bar"),
+                             selected = "Map",
+                             width = "100%")
+               )
+               
+      ),
+      
+      fluidRow(
+        column(width=12,
+               
+               #This shows the plot or map (see server)  
+               uiOutput('plot_ui')
+               
+        )
+      ),
+      
+      fluidRow(style="margin-top: 10px",
+               
+               column(width=8,
+                      
+                      #Description under the plot
+                      textOutput("description")
+                      
+               ),
+               
+               column(width=4, align="right",
+                      
+                      #Download button and link button 
+                      div(style="display:inline-block",downloadButton('downloadData', label = "Download data"),width=6),
+                      div(style="display:inline-block",uiOutput("clip"))
+                      
+               )
+               
+      ),
+      
      #Section under the plot for filtering data
      h3("Filter data"),
      
@@ -173,18 +251,24 @@ ui <- fluidPage(
 # Define server 
 server <- function(input, output, session) {
   
+  
+    output$varselector <- renderUI({
+      
+
+    })
+  
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
     # The user is supposed to select a category belonging 
     # to the variable selected. 
-    make_cat_selector <- function(inputvar, panel_code) {
+    make_cat_selector <- function(var) {
     
-      if (inputvar %in% factors) {
+      if (var %in% factors) {
       
-        pickerInput(inputId = paste0("cat_sel_",panel_code), 
+        pickerInput(inputId = "cat_sel", 
                     label = "Select category", 
-                    choices = varinfo[[inputvar]]$levels,
-                    selected = varinfo[[inputvar]]$default_levels,
+                    choices = varinfo[[var]]$levels,
+                    selected = varinfo[[var]]$default_levels,
                     multiple = TRUE,
                     width = "100%") 
         
@@ -192,11 +276,8 @@ server <- function(input, output, session) {
       
     }
 
-    output$cat_selector_qol <-  renderUI(make_cat_selector(input$var_qol, "qol"))
-    output$cat_selector_work <- renderUI(make_cat_selector(input$var_work, "work")) 
-    output$cat_selector_fin <-  renderUI(make_cat_selector(input$var_fin, "fin"))
-
-    
+    output$cat_selector <-  renderUI(make_cat_selector(input$var))
+  
     # Because the available categories are dependent on the inputvariable, R shiny does:
     # inputvar change -> run data + plot + update categories -> run data + plot 
     # The first step is triggered by the inputvariable change and the second step
@@ -208,117 +289,54 @@ server <- function(input, output, session) {
     #Reactive value saying that the categories have not been updated
     #This variable is used later on by requiring that it is TRUE for the data and plot
     #functions to be run.
-    updated_qol <- reactiveVal(FALSE)
+    updated <- reactiveVal(FALSE)
     #In case of a change in the selected categories, flag the variable to TRUE
-    observeEvent(input$cat_sel_qol, updated_qol(TRUE))
+    observeEvent(input$cat_sel, updated(TRUE))
     #In case of an input variable change...
-    observeEvent(input$var_qol, {
+    observeEvent(input$var, {
       
       #... and if the variable is numeric ...
-      if (("numeric" %in% varinfo[[input$var_qol]]$class) |
+      if (("numeric" %in% varinfo[[input$var]]$class) |
           # ... or at least one of the selected categories are the same
           # as the categories of the last variable selected ...
-          sum(input$cat_sel_qol %in% varinfo[[input$var_qol]]$levels)>0 ) 
+          sum(input$cat_sel %in% varinfo[[input$var]]$levels)>0 ) 
       # Set updated variable to true, and if not keep it to false
-      {updated_qol(TRUE)} else {updated_qol(FALSE)}}
+      {updated(TRUE)} else {updated(FALSE)}}
       #In the second round the condition will apply and it will be set to TRUE
       
     )
     
-    #Same system for the other tabs
-    updated_work <- reactiveVal(FALSE)
-    observeEvent(input$cat_sel_work, updated_work(TRUE))
-    observeEvent(input$var_work, {
-      
-      if (("numeric" %in% varinfo[[input$var_work]]$class) |
-          sum(input$cat_sel_work %in% varinfo[[input$var_work]]$levels)>0 ) 
-      {updated_work(TRUE)} else {updated_work(FALSE)}}
-    )
-    
-    updated_fin <- reactiveVal(FALSE)
-    observeEvent(input$cat_sel_fin, updated_fin(TRUE))
-    observeEvent(input$var_fin, {
-      
-      if (("numeric" %in% varinfo[[input$var_fin]]$class) |
-          sum(input$cat_sel_fin %in% varinfo[[input$var_fin]]$levels)>0 ) 
-      {updated_fin(TRUE)} else {updated_fin(FALSE)}}
-    )
-
     
     # Here the make_data function is called ('make_data.R') for each panel
     # It returns a list of a dataframe and a data class (numeric or factor)
     # These variables are used for the plot as well as for the download data function
-    data_qol <- reactive({
+    data <- reactive({
 
-      req(updated_qol())
+      req(updated())
 
-      make_data(input$var_qol, input$breakdown_qol, input$cat_sel_qol, 
-                                   input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter, threshold)
+      make_data(input$var, input$breakdown, input$cat_sel, 
+                           input$gender_filter, input$age_filter, input$education_filter, 
+                           input$country_filter, input$empstat_filter, threshold)
       
       })
     
-    data_work <- reactive({
-      
-      req(updated_work())
-      
-      make_data(input$var_work, input$breakdown_work, input$cat_sel_work, 
-                                   input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter, threshold)
-      
-      })
-    
-    data_fin <- reactive({
-      
-      req(updated_fin())
-      make_data(input$var_fin, input$breakdown_fin, input$cat_sel_fin, 
-                                   input$gender_filter, input$age_filter, input$education_filter, 
-                                   input$country_filter, input$empstat_filter, threshold)
-    })
 
     # Calling the make_plot and make_map function for each tab
     # Both functions are in a seperate R file
-    output$map_qol  <- renderLeaflet({
+    output$map  <- renderLeaflet({
       
-      req(updated_qol())
-      make_map(data_qol())
+      req(updated())
+      make_map(data())
       
     })
     
-    output$plot_qol <- renderPlotly({
+    output$plot <- renderPlotly({
       
-      req(updated_qol())                                  
-      make_plot(data_qol())
+      req(updated())                                  
+      make_plot(data())
       
      })
     
-    output$map_work  <- renderLeaflet({
-      
-      req(updated_work())
-      make_map(data_work())
-      
-    })
-    
-    output$plot_work <- renderPlotly({
-      
-      req(updated_work())
-      make_plot(data_work())
-      
-    })
-    
-    output$map_fin  <- renderLeaflet({
-      
-      req(updated_fin())
-      make_map(data_fin())
-  
-    })
-    
-    output$plot_fin <- renderPlotly({
-     
-      req(updated_fin()) 
-      make_plot(data_fin())
-      
-    })
     
     # This function writes a ui part. Had to do this server side because it needs to choose
     # between a leafletoutput and a plotly output
@@ -358,12 +376,7 @@ server <- function(input, output, session) {
     
     # Calling the plot ui functions for each tab
     # renderUI ensures its result is redered as as ui element.
-    output$plot_ui_qol <-  renderUI(make_plot_ui(input$breakdown_qol,  
-                                                 input$chart_type_qol ,"map_qol","plot_qol"))
-    output$plot_ui_work <- renderUI(make_plot_ui(input$breakdown_work, 
-                                                 input$chart_type_work,"map_work","plot_work"))    
-    output$plot_ui_fin <-  renderUI(make_plot_ui(input$breakdown_fin,  
-                                                 input$chart_type_fin ,"map_fin","plot_fin"))
+    output$plot_ui <-  renderUI(make_plot_ui(input$breakdown, input$chart_type ,"map","plot"))
     
     # Applying the make_description and make_excluded_text function to each tab
     # make_description is in 'make_description.R' and creates the little description 
@@ -371,22 +384,18 @@ server <- function(input, output, session) {
     # For some reason the text doesnt update when switching breakdowns without the observe
     observe({
       
-      output$description_qol <- renderText(paste(make_description(input$cat_sel_qol, input$var_qol), 
-                                                   make_excluded_text(data_qol())))
-      output$description_work <- renderText(paste(make_description(input$cat_sel_work, input$var_work), 
-                                                    make_excluded_text(data_work())))
-      output$description_fin <- renderText(paste(make_description(input$cat_sel_fin, input$var_fin), 
-                                                   make_excluded_text(data_fin())))
+      output$description <- renderText(paste(make_description(input$cat_sel, input$var), 
+                                                   make_excluded_text(data())))
     })
     
     # The user has the option to download the data that was used to
     # create the plot. The make_data function that was called above prepares the data. 
     # This is used to create the plot and seperately its used by the download button.
-    output$downloadData_qol <-  downloadHandler(
+    output$downloadData <-  downloadHandler(
           filename = 'EF_data.csv',
           content = function(con) {
             
-            df <- data_qol()[[1]]
+            df <- data()[[1]]
             # Removing commas from the data for the download data function
             colnames(df) <- gsub(",", "_", colnames(df))
             
@@ -397,47 +406,28 @@ server <- function(input, output, session) {
             write.csv(df, con)
           }
         )
-        
-    
-    output$downloadData_work <-  downloadHandler(
-      filename = 'EF_data.csv',
-      content = function(con) {
-        
-        df <- data_work()[[1]]
-        colnames(df) <- gsub(",", "_", colnames(df))
-        
-        df <- df %>%
-          mutate_if(is.numeric,round)
-        
-        write.csv(df, con)
-      }
-    )
-    
       
-    output$downloadData_fin <-  downloadHandler(
-      filename = 'EF_data.csv',
-      content = function(con) {
-        
-        df <- data_fin()[[1]]
-        colnames(df) <- gsub(",", "_", colnames(df))
-        
-        df <- df %>%
-          mutate_if(is.numeric,round)
-        
-        write.csv(df, con)
-      }
-    )
-    
     # What this part also does is it reads the parameters from the url, e.g. ?tab=qol
     # paramaters added to the url overrule any selections made in the app and 
     # automatically adjust them. This functionality is added so that links can be made
     # to specific plot configurations.
     
+    #Querying the URL
+    query <- reactive(parseQueryString(session$clientData$url_search))
+    
     # Its triggered only by a change in the URL
     observeEvent(session$clientData$url_search, {
+    
+      query <- query()  
       
-      #Querying the URL
-      query <- parseQueryString(session$clientData$url_search)
+      #Show only variables for section in the parameter
+      if (!is.null(query[["section"]])) {
+        
+        updatePickerInput(session,"var",
+                          choices = variables[[query[["section"]]]])
+        
+        
+      }
       
       #Function for updating the selected categories
       change_category <- function(parameter,inputvar) {
@@ -474,46 +464,22 @@ server <- function(input, output, session) {
                                     "Employment status" = "emp_stat",
                                     "Education" = "F004")
              
-             updatePickerInput(session,inputId="breakdown_qol",
+             updatePickerInput(session,inputId="breakdown",
                                choices = breakdown_list_full)
-             updatePickerInput(session,inputId="breakdown_work",
-                               choices = breakdown_list_full)
-             updatePickerInput(session,inputId="breakdown_fin",
-                               choices = breakdown_list_full)
-             
-             
+        
          }
       }
       
       #Update the inputs by calling the functions
-      updatePickerInput(session, inputId="cat_sel_qol",
-                        choices = varinfo[[input$var_qol]]$levels,
-                        selected = change_category("cat_sel_qol",input$var_qol))
-      
-      updatePickerInput(session, inputId="cat_sel_work",
-                        choices = varinfo[[input$var_work]]$levels,
-                        selected = change_category("cat_sel_work",input$var_work))
-      
-      updatePickerInput(session, inputId="cat_sel_fin",
-                        choices = varinfo[[input$var_fin]]$levels,
-                        selected = change_category("cat_sel_fin",input$var_fin))
-      
-      #Update panel choice
-      updateTabsetPanel(session,"tab",selected = query[["tab"]])
-      
+      updatePickerInput(session, inputId="cat_sel",
+                        choices = varinfo[[input$var]]$levels,
+                        selected = change_category("cat_sel",input$var))
+
       #Update other fields according to parameters in the URL
-      updatePickerInput(session, "var_qol", selected = query[["var_qol"]])
-      updatePickerInput(session, "var_work", selected = query[["var_work"]])
-      updatePickerInput(session, "var_fin", selected = query[["var_fin"]])
-      
-      updatePickerInput(session, "breakdown_qol", selected = query[["breakdown_qol"]])
-      updatePickerInput(session, "breakdown_work", selected = query[["breakdown_work"]])
-      updatePickerInput(session, "breakdown_fin", selected = query[["breakdown_fin"]])
-      
-      updatePickerInput(session, "chart_type_qol", selected = query[["chart_type_qol"]])
-      updatePickerInput(session, "chart_type_work", selected = query[["chart_type_work"]])
-      updatePickerInput(session, "chart_type_fin", selected = query[["chart_type_fin"]])
-      
+      updatePickerInput(session, "var", selected = query[["var"]])
+      updatePickerInput(session, "breakdown", selected = query[["breakdown"]])
+      updatePickerInput(session, "chart_type", selected = query[["chart_type"]])
+    
       #Update filters. These are not dependent on the tabs
       for (filter in c("country_filter","empstat_filter")) {
         
@@ -587,9 +553,11 @@ server <- function(input, output, session) {
                                  breakdown,breakdown_label,
                                  chart_type,chart_type_label) {
       
-      paste0(
+      paste0("?",
+        {if (!is.null(query()[["section"]])) {
+          paste0("section=",query()[["section"]])
+        }},
         
-        "?tab=",tab,
         make_parameter(inputvar,inputvar_label),
         make_multiple_parameter(cat_sel,cat_sel_label),
         { if (breakdown!="B001") 
@@ -613,30 +581,10 @@ server <- function(input, output, session) {
       # are dependent on the tab so parameters are made for each of tab
 
       # Quality of life tab
-      if (input$tab=="qol") {
-        
-        parameters <- paste_parameters(input$tab,input$var_qol,"var_qol",
-                                      input$cat_sel_qol,"cat_sel_qol",
-                                      input$breakdown_qol,"breakdown_qol",
-                                      input$chart_type_qol,"chart_type_qol")
-        
-        # Work tab        
-      } else if (input$tab=="work") {
-        
-        parameters <- paste_parameters(input$tab,input$var_work,"var_work",
-                                      input$cat_sel_work,"cat_sel_work",
-                                      input$breakdown_work,"breakdown_work",
-                                      input$chart_type_work,"chart_type_work")
-        
-        #Financial security tab        
-      } else if (input$tab=="fin") {
-        
-        parameters <- paste_parameters(input$tab,input$var_fin,"var_fin",
-                                      input$cat_sel_fin,"cat_sel_fin",
-                                      input$breakdown_fin,"breakdown_fin",
-                                      input$chart_type_fin,"chart_type_fin")
-        
-      }
+      parameters <- paste_parameters(input$tab,input$var,"var",
+                                     input$cat_sel,"cat_sel",
+                                     input$breakdown,"breakdown",
+                                     input$chart_type,"chart_type")
       
       #Pasting the pieces together to one URL
       url <- paste0(domain,
@@ -685,28 +633,17 @@ server <- function(input, output, session) {
     # Here is the button to copy the URL for the plot configuration
     # Three different ones are made for each panel.
     # Add clipboard buttons
-    output$clip_qol <-  output$clip_work <- output$clip_fin <- 
-      renderUI({
-        rclipButton("clipbtn_fin", "Copy link", make_url(), icon("clipboard"))
-      })
+    output$clip <-  renderUI({
+      rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
+    })
     
     #Message that link has been copied
     #Observe event ensures the message is shown if the button has been clicked.
-    observeEvent(input$clipbtn_qol, {
+    observeEvent(input$clipbtn, {
       showNotification("Link copied to clipboard",type="warning")
     })
     
-    observeEvent(input$clipbtn_work, {
-      showNotification("Link copied to clipboard",type="warning")
-    })
-    
-    observeEvent(input$clipbtn_fin, {
-      showNotification("Link copied to clipboard",type="warning")
-    })
-
 }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
-
-#test

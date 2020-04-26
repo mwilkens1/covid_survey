@@ -65,12 +65,7 @@ make_map <- function(data) {
     
     # Plotting the map
     # Initialising leaflet with the shapefile
-    fig <- leaflet(shp_20, 
-                   #This removes the zoomcontrol 
-                   options = leafletOptions(zoomControl = FALSE)) %>%
-                    #this puts it back again in another position to avoid overlap
-                    onRender("function(el, x) {
-                    L.control.zoom({ position: 'bottomleft' }).addTo(this)}") %>% 
+    fig <- leaflet(shp_20) %>% 
       #Adding the logo. This is from package leafem
       addLogo("https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
               alpha = 0.8, src = "remote",
