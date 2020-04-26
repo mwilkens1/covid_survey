@@ -241,6 +241,7 @@ ui <- fluidPage(
              )
             
            ),
+           
            a(href="https://github.com/mwilkens1/covid_survey/",
              img(style="position: absolute; right: 0px; bottom: 0px",
                  src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
@@ -248,11 +249,8 @@ ui <- fluidPage(
                  height=30))
           )
       )
-   )
+
 )
-
-
-
 
 
 # Define server 
