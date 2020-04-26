@@ -58,6 +58,7 @@ source("make_description.R", local=TRUE)
 #EF colour scheme
 EF_colours <- list("#0D95D0", "#7DC462", "#E72F52", "#774FA0", "#EFB743", "#D44627")
 
+#Creating lists of variable names and labels for the question selection
 sections <- c("Quality of life","Work and teleworking","Financial situation")
 
 variables <- lapply(sections, function(s) {
@@ -73,7 +74,6 @@ variables <- lapply(sections, function(s) {
 })
 
 names(variables) <- sections
-
 
 # Define UI 
 ui <- fluidPage(
@@ -134,9 +134,9 @@ ui <- fluidPage(
                pickerInput(inputId = "breakdown", 
                            label = "By",
                            choices = breakdown_list,
-                           width = "100%"
+                           width = "100%")
                            
-               )),
+               ),
         
         column(width=6,
                
@@ -203,8 +203,8 @@ ui <- fluidPage(
                             options = list(`live-search` = TRUE,
                                            `actions-box` = TRUE),
                             multiple=TRUE,
-                            width = "100%"
-                ),
+                            width = "100%"),
+                
                 
                 hidden(
                 pickerInput(inputId = "empstat_filter", label = "Employment status", 
@@ -212,9 +212,9 @@ ui <- fluidPage(
                             selected = levels(ds$emp_stat),
                             options = list(`actions-box` = TRUE),
                             multiple = TRUE,
-                            width = "100%"
+                            width = "100%")
                 )
-                )),
+         ),
          
          column(7,
            #splitlayout evenly spreads the elements within the column    
@@ -270,7 +270,8 @@ server <- function(input, output, session) {
                     choices = varinfo[[var]]$levels,
                     selected = varinfo[[var]]$default_levels,
                     multiple = TRUE,
-                    width = "100%") 
+                    width = "100%",
+                    options = list(mobile=TRUE)) 
         
       }
       
