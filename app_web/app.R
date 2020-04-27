@@ -252,66 +252,52 @@ ui <- fluidPage(
 # Define server 
 server <- function(input, output, session) {
   
-    #Querying the URL parameters
+    # Querying the URL parameters: these are generated when a user clicks 'copy link'
+    # Also, a paramater is inbedded on the page on which the shiny app is displayed 
+    # on the Eurofound website via an iframe (see below).
+    # The parameters can set the inputs so that the same chart with the same inputs
+    # can be reproduced
     query <- reactive(parseQueryString(session$clientData$url_search))
-  
+
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
     # The user is supposed to select a category belonging 
-    # to the variable selected. 
-    make_cat_selector <- function(var) {
-    
-      query <- query()
+    # to the variable selected and therefore only the categories beloning to 
+    # that particular question should be shown. 
+    output$cat_selector <-  renderUI({
       
-      #Function for updating the selected categories
-      change_category <- function(parameter,var) {
+      #First, check if any paramters have been defined in the URL because
+      #they should supersede anything else.
+      if (!is.null(query()[["cat_sel"]])) {
         
-        # if a parameter is present in URL
-        if (!is.null(query[[parameter]])) {
-          
-          # Get it and get rid of '_'
-          cat_sel <- query[[parameter]] %>%
-            strsplit("_")
-          
-          selected <- cat_sel[[1]]
-          
-          #If not get the default preferred levels    
-        } else {
-          
-          selected <- varinfo[[var]]$default_levels
-          
-        }
+        # Get it and get rid of '_'.
+        cat_sel <- query()[["cat_sel"]] %>%
+          strsplit("_")
         
-        return(selected)
+        #Selected categories are the ones in the URL parameters
+        selected <- cat_sel[[1]]
         
-      }
-      
-      if (!is.null(query[["cat_sel"]])) {
-        
-        selected <- change_category("cat_sel",var)
-        
+        #If not get the default preferred levels    
       } else {
         
-        selected <- varinfo[[var]]$default_levels
+        selected <- varinfo[[input$var]]$default_levels
         
       }
       
-      
-      if (var %in% factors) {
+      # Only do this if the selected variable is a factor variable
+      # 'factors' is defined
+      if (input$var %in% factors) {
       
         pickerInput(inputId = "cat_sel", 
                     label = "Select category", 
-                    choices = varinfo[[var]]$levels,
+                    choices = varinfo[[input$var]]$levels,
                     selected = selected,
                     multiple = TRUE,
                     width = "100%",
                     options = list(title = "Select at least one category")) 
-        
-      }
+        }
       
-    }
-
-    output$cat_selector <-  renderUI(make_cat_selector(input$var))
+    })
   
     # Because the available categories are dependent on the inputvariable, R shiny does:
     # inputvar change -> run data + plot + update categories -> run data + plot 
@@ -346,19 +332,23 @@ server <- function(input, output, session) {
     #not appear.
     data_updated <- reactiveVal(FALSE)
     
-    
     # Here the make_data function is called ('make_data.R') for each panel
     # It returns a list of a dataframe and a data class (numeric or factor)
     # These variables are used for the plot as well as for the download data function
     data <- reactive({
 
+      #Requires the the category selection has been updated
       req(cats_updated())
+      #Sets the data updated variable to false
       data_updated(FALSE)
+      #Runs the make data function
       data <- make_data(input$var, input$breakdown, input$cat_sel, 
                            input$gender_filter, input$age_filter, input$education_filter, 
                            input$country_filter, input$empstat_filter, threshold)
+      #Sets the data updated to TRUE. This step does not occur if one of the conditions
+      #specified in the make_data function are not met (see validates in make_data)
       data_updated(TRUE)
-
+    
       return(data)
       
       })
@@ -367,7 +357,9 @@ server <- function(input, output, session) {
     # Both functions are in a seperate R file
     output$map  <- renderLeaflet({
       
+      #Also require the categories to be updated
       req(cats_updated())
+      #Call the make_map function with the data created
       make_map(data())
       
     })
@@ -650,6 +642,9 @@ server <- function(input, output, session) {
                                      input$cat_sel,"cat_sel",
                                      input$breakdown,"breakdown",
                                      input$chart_type,"chart_type")
+        
+      #Remove the first &
+      parameters <- substr(parameters,2,nchar(parameters))
       
       #Pasting the pieces together to one URL
       url <- paste0(sub("\\?.*","\\",input$currentUrl),#this removes any parameters already there

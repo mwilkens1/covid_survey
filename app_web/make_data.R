@@ -65,9 +65,12 @@ make_data <- function(inputvar, breakdown, category,
         filter(!is.na(!!sym(inputvar_inner)), !is.na(!!sym(breakdown)), !is.na(w)) %>%
         #Applying gender age, education and employment status filters
         {if (gender_filter!="All") filter(., B002 %in% gender_filter) else .} %>%
-        filter(age_group %in% age_filter) %>%
-        filter(F004 %in% education_filter) %>%
-        filter(emp_stat %in% empstat_filter) %>%
+        {if (length(age_filter)!=length(levels(.$age_group))) 
+          filter(., .$age_group %in% age_filter) else .} %>%  
+        {if (length(education_filter)!=length(levels(.$F004))) 
+          filter(., .$F004 %in% education_filter) else .} %>%  
+        {if (length(empstat_filter)!=length(levels(.$emp_stat))) 
+          filter(., .$emp_stat %in% empstat_filter) else .} %>%  
         droplevels()
     
       # Calculating the total 
@@ -82,6 +85,7 @@ make_data <- function(inputvar, breakdown, category,
         filter(B001 %in% country_filter) %>%
         droplevels()
   
+        print(nrow(df))
         #This tests whether the overall dataset (all categories combined) is large enough
         validate(
           need(
