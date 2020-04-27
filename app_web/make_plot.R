@@ -16,6 +16,16 @@ make_plot <- function(data) {
   breakdown <- colnames(data)[1]
   colnames(data)[1] <- "bdown"
   
+  # Adding a space to the categories to increase the distance to the axis
+  newlevels <- NULL
+  for (level in levels(data$bdown)) {
+    
+    newlevels <- c(newlevels,paste0(level," "))
+    
+  }
+  
+  data$bdown <- factor(data$bdown, levels = levels(data$bdown), labels=newlevels)
+  
   #Making the plot
   fig <- plot_ly()
   
