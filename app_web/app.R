@@ -16,7 +16,7 @@ library(shinyjs)
 #setwd(paste0(getwd(),"/app_web"))
 
 #URL where the app is iframed
-domain <- "https://eurofound.acc.fpfis.tech.ec.europa.eu/data/covid-19-survey-web-visualisation"
+domain <- "https://eurofound.acc.fpfis.tech.ec.europa.eu/data/covid-19/"
 
 #Minimun number of cases for a category to be shown
 threshold <- 200
@@ -37,11 +37,6 @@ breakdown_list <- list("Country" = "B001",
 
 # Load the shapefile
 load("data/shp_20.rda")
-
-#Loading function that creates a panel (tab) in the main body of the app. Because they are all 
-#identical I use a function that I call 3 times. Each tab represents a topic:
-#Quality of life, Work and teleworking and Financial situation.
-source("make_panel.R", local=TRUE)
 
 #Function that calculates the dataset for the plot
 source("make_data.R", local=TRUE)
@@ -106,7 +101,7 @@ ui <- fluidPage(
            }
           ")
         )),                
-                
+      
      #necessary for the clipboard button
      rclipboardSetup(),
      
@@ -152,13 +147,15 @@ ui <- fluidPage(
                #Conditional panel that lets you choose map or bar
                #It only shows up if country is selected as breakdown
                conditionalPanel(
-                 condition =  "input.breakdown == 'B001'"),
+                 condition = "input.breakdown == 'B001'",
                  pickerInput(inputId = "chart_type", label = "Chart type", 
                              choices = c("Map","Bar"),
                              selected = "Map",
                              width = "100%")
                )
                
+        )
+        
       ),
       
       fluidRow(
@@ -182,7 +179,7 @@ ui <- fluidPage(
                column(width=4, align="right",
                       
                       #Download button and link button 
-                      div(style="display:inline-block",downloadButton('downloadData', label = "Download data"),width=6),
+                      div(style="display:inline-block",uiOutput("downloadbutton"),width=6),
                       div(style="display:inline-block",uiOutput("clip"))
                       
                )
@@ -246,7 +243,7 @@ ui <- fluidPage(
              img(style="position: absolute; right: 0px; bottom: 0px",
                  src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
                  align="right",
-                 height=30))
+                 height=25))
           )
       )
 
@@ -256,11 +253,8 @@ ui <- fluidPage(
 # Define server 
 server <- function(input, output, session) {
   
-  
-    output$varselector <- renderUI({
-      
-
-    })
+    #Querying the URL paramters
+    query <- reactive(parseQueryString(session$clientData$url_search))
   
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
@@ -268,12 +262,48 @@ server <- function(input, output, session) {
     # to the variable selected. 
     make_cat_selector <- function(var) {
     
+      query <- query()
+      
+      #Function for updating the selected categories
+      change_category <- function(parameter,var) {
+        
+        # if a parameter is present in URL
+        if (!is.null(query[[parameter]])) {
+          
+          # Get it and get rid of '_'
+          cat_sel <- query[[parameter]] %>%
+            strsplit("_")
+          
+          selected <- cat_sel[[1]]
+          
+          #If not get the default preferred levels    
+        } else {
+          
+          selected <- varinfo[[var]]$default_levels
+          
+        }
+        
+        return(selected)
+        
+      }
+      
+      if (!is.null(query[["cat_sel"]])) {
+        
+        selected <- change_category("cat_sel",var)
+        
+      } else {
+        
+        selected <- varinfo[[var]]$default_levels
+        
+      }
+      
+      
       if (var %in% factors) {
       
         pickerInput(inputId = "cat_sel", 
                     label = "Select category", 
                     choices = varinfo[[var]]$levels,
-                    selected = varinfo[[var]]$default_levels,
+                    selected = selected,
                     multiple = TRUE,
                     width = "100%") 
         
@@ -396,65 +426,63 @@ server <- function(input, output, session) {
     # The user has the option to download the data that was used to
     # create the plot. The make_data function that was called above prepares the data. 
     # This is used to create the plot and seperately its used by the download button.
+    
     output$downloadData <-  downloadHandler(
-          filename = 'EF_data.csv',
-          content = function(con) {
-            
-            df <- data()[[1]]
-            # Removing commas from the data for the download data function
-            colnames(df) <- gsub(",", "_", colnames(df))
-            
-            df <- df %>%
-              # And rounding to 0 decimals
-              mutate_if(is.numeric,round)
-            
-            write.csv(df, con)
-          }
-        )
+        
+             filename = 'EF_data.csv',
+             content = function(con) {
+               
+               df <- data()[[1]]
+               
+               # Removing commas from the data for the download data function
+               colnames(df) <- gsub(",", "_", colnames(df))
+               
+               df <- df %>%
+                 # And rounding to 0 decimals
+                 mutate_if(is.numeric,round)
+               
+               write.csv(df, con)
+             }
+           )
+    
+    #Creating download button in UI, making sure it doesnt appear in case the data has been completely filtered.
+    #Same for the copy link button
+    observe({  
+        
+      if ((is.null(input$cat_sel) & !("numeric" %in% varinfo[[input$var]]$class)) |
+           is.null(input$age_filter) | is.null(input$education_filter) | is.null(input$empstat_filter) |
+           is.null(input$country_filter)) { 
+
+        output$downloadbutton <- renderUI(hidden(downloadButton('downloadData', label = "Download data")))
+        output$clip <- renderUI(hidden(rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))))
+         
+      } else {
+        
+        output$downloadbutton <- renderUI(downloadButton('downloadData', label = "Download data"))
+        output$clip <- renderUI(rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard")))
+        
+      }
       
+    })
+    
+    #Message that link has been copied
+    #Observe event ensures the message is shown if the button has been clicked.
+    observeEvent(input$clipbtn, {
+      showNotification("Link copied to clipboard",type="warning")
+    })
+    
+    
     # What this part also does is it reads the parameters from the url, e.g. ?tab=qol
     # paramaters added to the url overrule any selections made in the app and 
     # automatically adjust them. This functionality is added so that links can be made
     # to specific plot configurations.
-    
-    #Querying the URL
-    query <- reactive(parseQueryString(session$clientData$url_search))
     
     # Its triggered only by a change in the URL
     observeEvent(session$clientData$url_search, {
     
       query <- query()  
       
-      #Show only variables for section in the parameter
-      if (!is.null(query[["section"]])) {
-        
-        updatePickerInput(session,"var",
-                          choices = variables[[query[["section"]]]])
-        
-        
-      }
-      
-      #Function for updating the selected categories
-      change_category <- function(parameter,inputvar) {
-        
-        # if a parameter is present in URL
-        if (!is.null(query[[parameter]])) {
-          
-          # Get it and get rid of '_'
-          cat_sel <- query[[parameter]] %>%
-            strsplit("_")
-          
-          selected <- cat_sel[[1]]
-          
-          #If not get the default preferred levels    
-        } else {
-          
-          selected <- varinfo[[inputvar]]$default_levels
-          
-        }
-        
-      }
-      
+    
       #Enables extra filters and breakdowns
       if (!is.null(query[["unhide"]])) {
         
@@ -476,12 +504,25 @@ server <- function(input, output, session) {
       }
       
       #Update the inputs by calling the functions
-      updatePickerInput(session, inputId="cat_sel",
-                        choices = varinfo[[input$var]]$levels,
-                        selected = change_category("cat_sel",input$var))
+      # updatePickerInput(session, inputId="cat_sel",
+      #                   choices = varinfo[[input$var]]$levels,
+      #                   selected = change_category("cat_sel",input$var))
 
+      # Limit the number of variables shown to those in the section 
+      # if section parameter is specified
+      if (!is.null(query[["section"]])) {
+        
+        choices_var <- variables[[query[["section"]]]]
+        
+      } else {
+        
+        choices_var <- variables
+        
+      }
+      
       #Update other fields according to parameters in the URL
-      updatePickerInput(session, "var", selected = query[["var"]])
+      updatePickerInput(session, "var", selected = query[["var"]],
+                                        choices = choices_var)
       updatePickerInput(session, "breakdown", selected = query[["breakdown"]])
       updatePickerInput(session, "chart_type", selected = query[["chart_type"]])
     
@@ -553,18 +594,17 @@ server <- function(input, output, session) {
     #Function for pasting the different sets of parameters together
     #The if statemets are there to prevent a parameter from being 
     #added if the default inputs are chosen. 
-    paste_parameters <- function(tab,inputvar,inputvar_label,
+    paste_parameters <- function(inputvar,inputvar_label,
                                  cat_sel,cat_sel_label,
                                  breakdown,breakdown_label,
                                  chart_type,chart_type_label) {
       
-      paste0("?",
-        {if (!is.null(query()[["section"]])) {
-          paste0("section=",query()[["section"]])
-        }},
+      paste0(
         
         make_parameter(inputvar,inputvar_label),
+        
         make_multiple_parameter(cat_sel,cat_sel_label),
+        
         { if (breakdown!="B001") 
           make_parameter(breakdown,breakdown_label)
         },
@@ -582,17 +622,22 @@ server <- function(input, output, session) {
     #Putting it together: create URL to reproduce the plot
     make_url <- reactive({
       
+      #Getting the parent URL, because the shiny app is iframed
+      runjs('var currentUrl = document.referrer; Shiny.onInputChange("currentUrl",currentUrl);')
+    
+      print(input$currentUrl)
+      
       # Question selection, category selection, breakdown selection and chart type
       # are dependent on the tab so parameters are made for each of tab
 
       # Quality of life tab
-      parameters <- paste_parameters(input$tab,input$var,"var",
+      parameters <- paste_parameters(input$var,"var",
                                      input$cat_sel,"cat_sel",
                                      input$breakdown,"breakdown",
                                      input$chart_type,"chart_type")
       
       #Pasting the pieces together to one URL
-      url <- paste0(domain,
+      url <- paste0(input$currentUrl,"?",
                     parameters,
                     # If number of selected counties is not the same as the number of
                     # default countries ...
@@ -633,21 +678,7 @@ server <- function(input, output, session) {
         URLencode()
       
     })
-    
-    
-    # Here is the button to copy the URL for the plot configuration
-    # Three different ones are made for each panel.
-    # Add clipboard buttons
-    output$clip <-  renderUI({
-      rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
-    })
-    
-    #Message that link has been copied
-    #Observe event ensures the message is shown if the button has been clicked.
-    observeEvent(input$clipbtn, {
-      showNotification("Link copied to clipboard",type="warning")
-    })
-    
+
 }
 
 # Run the application 

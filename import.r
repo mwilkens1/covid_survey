@@ -241,7 +241,7 @@ ds$D006_01 <- factor(ds$D006_01, levels=c(1,2,3,4,5),
                      labels=c("Daily","Several times a week","Several times a month","Less often","Never"),
                      ordered=TRUE)
 
-ds$D007_01 <- factor(ds$C007_01, levels=c(1,2), labels=c("No","Yes"))
+ds$D007_01 <- factor(ds$D007_01, levels=c(1,2), labels=c("No","Yes"))
 
 for (var in c("D008_01","E007_01")) {
 
