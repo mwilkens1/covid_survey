@@ -196,17 +196,17 @@ ui <- fluidPage(
                             choices = levels(ds$B001),
                             # Selected are the EU27 by default
                             selected = levels(ds$B001)[1:27],
-                            options = list(`live-search` = TRUE,
-                                           `actions-box` = TRUE),
+                            options = list(`actions-box` = TRUE,
+                                           title = "Select at least one country"),
                             multiple=TRUE,
                             width = "100%"),
-                
-                
+
                 hidden(
                 pickerInput(inputId = "empstat_filter", label = "Employment status", 
                             choices = levels(ds$emp_stat),
                             selected = levels(ds$emp_stat),
-                            options = list(`actions-box` = TRUE),
+                            options = list(`actions-box` = TRUE,
+                                           title = "Select at least one employment status"),
                             multiple = TRUE,
                             width = "100%")
                 )
@@ -252,7 +252,7 @@ ui <- fluidPage(
 # Define server 
 server <- function(input, output, session) {
   
-    #Querying the URL paramters
+    #Querying the URL parameters
     query <- reactive(parseQueryString(session$clientData$url_search))
   
     # Creating te dropdown for selecting categories.
@@ -304,7 +304,8 @@ server <- function(input, output, session) {
                     choices = varinfo[[var]]$levels,
                     selected = selected,
                     multiple = TRUE,
-                    width = "100%") 
+                    width = "100%",
+                    options = list(title = "Select at least one category")) 
         
       }
       
@@ -323,9 +324,9 @@ server <- function(input, output, session) {
     #Reactive value saying that the categories have not been updated
     #This variable is used later on by requiring that it is TRUE for the data and plot
     #functions to be run.
-    updated <- reactiveVal(FALSE)
+    cats_updated <- reactiveVal(FALSE)
     #In case of a change in the selected categories, flag the variable to TRUE
-    observeEvent(input$cat_sel, updated(TRUE))
+    observeEvent(input$cat_sel, cats_updated(TRUE))
     #In case of an input variable change...
     observeEvent(input$var, {
       
@@ -335,10 +336,15 @@ server <- function(input, output, session) {
           # as the categories of the last variable selected ...
           sum(input$cat_sel %in% varinfo[[input$var]]$levels)>0 ) 
       # Set updated variable to true, and if not keep it to false
-      {updated(TRUE)} else {updated(FALSE)}}
+      {cats_updated(TRUE)} else {cats_updated(FALSE)}}
       #In the second round the condition will apply and it will be set to TRUE
       
     )
+    
+    #Reactive value to show that the data has been updated. 
+    #If the data has not been updated the dowload button and the copy link button should
+    #not appear.
+    data_updated <- reactiveVal(FALSE)
     
     
     # Here the make_data function is called ('make_data.R') for each panel
@@ -346,27 +352,29 @@ server <- function(input, output, session) {
     # These variables are used for the plot as well as for the download data function
     data <- reactive({
 
-      req(updated())
-
-      make_data(input$var, input$breakdown, input$cat_sel, 
+      req(cats_updated())
+      data_updated(FALSE)
+      data <- make_data(input$var, input$breakdown, input$cat_sel, 
                            input$gender_filter, input$age_filter, input$education_filter, 
                            input$country_filter, input$empstat_filter, threshold)
+      data_updated(TRUE)
+
+      return(data)
       
       })
-    
-
+   
     # Calling the make_plot and make_map function for each tab
     # Both functions are in a seperate R file
     output$map  <- renderLeaflet({
       
-      req(updated())
+      req(cats_updated())
       make_map(data())
       
     })
     
     output$plot <- renderPlotly({
       
-      req(updated())                                  
+      req(cats_updated())                                  
       make_plot(data())
       
      })
@@ -418,8 +426,13 @@ server <- function(input, output, session) {
     # For some reason the text doesnt update when switching breakdowns without the observe
     observe({
       
-      output$description <- renderText(paste(make_description(input$cat_sel, input$var), 
-                                                   make_excluded_text(data())))
+      output$description <- renderText({
+        
+        #Only appears if there is data
+        validate(need(data_updated(), message=""))
+        
+        paste(make_description(input$cat_sel, input$var), 
+              make_excluded_text(data()))})
     })
     
     # The user has the option to download the data that was used to
@@ -443,26 +456,31 @@ server <- function(input, output, session) {
                write.csv(df, con)
              }
            )
-    
-    #Creating download button in UI, making sure it doesnt appear in case the data has been completely filtered.
-    #Same for the copy link button
-    observe({  
-        
-      if ((is.null(input$cat_sel) & !("numeric" %in% varinfo[[input$var]]$class)) |
-           is.null(input$age_filter) | is.null(input$education_filter) | is.null(input$empstat_filter) |
-           is.null(input$country_filter)) { 
 
-        output$downloadbutton <- renderUI(hidden(downloadButton('downloadData', label = "Download data")))
-        output$clip <- renderUI(hidden(rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))))
-         
-      } else {
-        
-        output$downloadbutton <- renderUI(downloadButton('downloadData', label = "Download data"))
-        output$clip <- renderUI(rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard")))
-        
-      }
+    #Creating the UI for the downloadbutton. 
+    output$downloadbutton <- renderUI({
       
-    })
+      #Only show it if there is data
+      validate(
+        need(data_updated(), message="")
+      )
+      
+      downloadButton('downloadData', label = "Download data")
+      
+      
+      })
+    
+    #Creating the UI for the copy link button
+    output$clip <- renderUI({
+      
+      #Only show it if there is data
+      validate(
+        need(data_updated(), message="")
+      )
+      
+      rclipButton("clipbtn", "Copy link", make_url(), icon("clipboard"))
+      
+      })
     
     #Message that link has been copied
     #Observe event ensures the message is shown if the button has been clicked.
@@ -623,9 +641,7 @@ server <- function(input, output, session) {
       
       #Getting the parent URL, because the shiny app is iframed
       runjs('var currentUrl = document.referrer; Shiny.onInputChange("currentUrl",currentUrl);')
-    
-      print(input$currentUrl)
-      
+
       # Question selection, category selection, breakdown selection and chart type
       # are dependent on the tab so parameters are made for each of tab
 
@@ -636,7 +652,8 @@ server <- function(input, output, session) {
                                      input$chart_type,"chart_type")
       
       #Pasting the pieces together to one URL
-      url <- paste0(input$currentUrl,"?",
+      url <- paste0(sub("\\?.*","\\",input$currentUrl),#this removes any parameters already there
+                    "?",
                     parameters,
                     # If number of selected counties is not the same as the number of
                     # default countries ...
