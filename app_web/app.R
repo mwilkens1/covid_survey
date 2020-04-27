@@ -113,8 +113,7 @@ ui <- fluidPage(
            pickerInput(inputId = "var", 
                        label = "Select question", 
                        choices = variables,
-                       options = list(`live-search` = TRUE,  
-                                      size = 25),
+                       options = list(size = 25),
                        width = "100%")
            
                
