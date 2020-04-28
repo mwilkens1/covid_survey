@@ -22,7 +22,13 @@ domain <- "https://eurofound.acc.fpfis.tech.ec.europa.eu/data/covid-19/"
 threshold <- 200
 
 # This is the full dataset that is loaded into the server
-load("data/ds.Rda")
+# This is the version of 28 April
+load("data/ds_2804.Rda")
+
+#renaming the weight variable
+ds <- ds %>% 
+      select(-w, -w_gross, -w_trimmed) %>%
+      rename(w = w_gross_trim)
 
 # Loading the list with al the variable info
 load("data/varinfo.rda")

@@ -88,6 +88,9 @@ attr(ds, "description") = "Eurofound e-survey Living, working and COVID-19 "
 attr(ds, "date") = Sys.time()
 attr(ds, "server") = "https://s2survey.net"
 
+#Saving the raw data
+save(ds, file="data/ds_raw.Rda")
+
 # Variable und Value Labels
 ds$EU27 = ds$B001>0 & ds$B001<28
 ds$B001 = factor(ds$B001, levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60"), labels=c("Austria","Belgium","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden","Albania","Bosnia and Herzegovina","Brazil","Canada","China","Colombia","Ecuador","Egypt","India","Indonesia","Iran","Japan","Mexico","Montenegro","Morocco","Netherlands Antilles","Nigeria","North Macedonia","Pakistan","Philippines","Russia","Serbia","South Korea","Switzerland","Suriname","Syria","Thailand","Turkey","Ukraine","United Kingdom","United States","Vietnam","Other country"), ordered=FALSE)
@@ -294,13 +297,13 @@ comment(ds$STARTED) = "Time the interview has started (Europe/Berlin)"
 comment(ds$B001) = "Country"
 comment(ds$B002) = "Gender"
 comment(ds$B003_01) = "Age"
-comment(ds$C001_01) = "Life satisfaction"
-comment(ds$C002_01) = "Happiness"
+comment(ds$C001_01) = "All things considered, how satisfied would you say you are with your life these days? (1-10 scale)"
+comment(ds$C002_01) = "Taking all things together on a scale of 1 to 10, how happy would you say you are?"
 comment(ds$C003_01) = "Optimism and resilience: I am optimistic about my future"
 comment(ds$C003_02) = "Optimism and resilience: I am optimistic about my children's or grandchildren's future"
 comment(ds$C003_03) = "Optimism and resilience: I find it difficult to deal with important problems that come up in my life"
 comment(ds$C003_04) = "Optimism and resilience: When things go wrong in my life, it generally takes me a long time to get back to normal"
-comment(ds$C004_01) = "Health"
+comment(ds$C004_01) = "In general how good is your health?"
 comment(ds$C005_01) = "WHO-5: I have felt cheerful and in good spirits"
 comment(ds$C005_02) = "WHO-5: I have felt calm and relaxed"
 comment(ds$C005_03) = "WHO-5: I have felt active and vigorous"
@@ -570,37 +573,53 @@ source("Cleaning_simple.R", local = TRUE)
 
 ds <- ds %>%
   left_join(ds_clean[c("CASE","clean")], by="CASE")
+
 ds$clean[is.na(ds$clean)] <- FALSE
 
 table(ds$clean)
-
-#Removing unclean cases
-ds <- filter(ds, clean==TRUE)
 
 ### ----------------------- WEIGHTING ------------------------------ ###
 
 source("weighting_by_country.R",local=TRUE)
 
-weights <- weigh_data(ds, minimum_weight = 0.05,
+weights <- ds %>% 
+           filter(clean==TRUE) %>%
+           weigh_data(minimum_weight = 0.05,
                       trim_lower = 0.16,
                       trim_upper = 6)
 
 ds <- weights %>%
-  select(CASE, w_gross_trim) %>%
-  rename(w = w_gross_trim) %>%
+  select(CASE, w, w_trimmed, w_gross, w_gross_trim) %>%
   right_join(ds, by="CASE")
 
-#'other country' and those who are missing or country are dropped from the data
+### ----------------------- SAVING FILES FOR ANALYSIS ------------------------------ ###
+#note: these include unclean interviews and unweighted data.
 
-ds <- ds %>%
-  filter(!is.na(w)) %>%
-  droplevels()
+save(ds, file="data/ds_2804_full.Rda")
+
+library(foreign)
+write.dta(ds, "data/ds_2804_full.dta")
+
+library(haven)
+write_sav(ds, "data/ds_2804_full.sav")
 
 ### ------------------ DROPPING VARIABLES --------------------------- ###
 
 to_drop <- names(list.filter(varinfo, section=='other'))
 
-ds <- ds[,!colnames(ds) %in% to_drop]
+#Removing unclean and unweighted cases
+ds <- ds %>%
+  select(-one_of(to_drop)) %>%
+  filter(clean==TRUE, !is.na(w)) %>%
+  droplevels()
+
+### ----------------------- SAVING FILES FOR APPS ------------------------------ ###
+
+save(varinfo, file="app_benchmark/data/varinfo.rda")
+save(ds, file="app_benchmark/data/ds_2804.Rda")
+
+save(ds, file="app_web/data/ds_2804.Rda")
+save(varinfo, file="app_web/data/varinfo.rda")
 
 ### ----------------------- PREPARE MAP ------------------------------ ###
 
@@ -610,15 +629,5 @@ shp_20 <- readOGR("shapefiles","CNTR_RG_20M_2016_4326") %>%
 
 shp_20$NAME_ENGL <- droplevels(shp_20$NAME_ENGL)
 shp_20$Country <- shp_20$NAME_ENGL
-
-
-### ----------------------- SAVING ALL FILES ------------------------------ ###
-
-#Saving all the files
-save(varinfo, file="app_benchmark/data/varinfo.rda")
-save(ds, file="app_benchmark/data/ds.Rda")
-
-save(ds, file="app_web/data/ds.Rda")
-save(varinfo, file="app_web/data/varinfo.rda")
 
 save(shp_20, file = "app_web/data/shp_20.rda")

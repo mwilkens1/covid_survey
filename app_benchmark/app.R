@@ -15,7 +15,10 @@ source("get_respondent_data.R")
 # This is the full dataset that is loaded into the server
 load("data/ds.Rda")
 
-ds$w <- 1 
+#renaming the weight variable
+ds <- ds %>% 
+  select(-w, -w_gross, -w_trimmed) %>%
+  rename(w = w_gross_trim)
 
 # This is a list of 3 lists of variable names and labels
 load("data/varinfo.rda")

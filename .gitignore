@@ -4,4 +4,6 @@
 .Ruserdata
 secrets.R
 ds.Rda
+ds_2804.Rda
 **/rsconnect/
+/data
