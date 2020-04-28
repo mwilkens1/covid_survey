@@ -430,7 +430,7 @@ for (var in num_vars) {
 #Create age groups
 ds$age_group[ds$B003_01<35] <- "Under 35"
 ds$age_group[ds$B003_01>=35 & ds$B003_01<50] <- "35 - 49"
-ds$age_group[ds$B003_01>50] <- "50 and over"
+ds$age_group[ds$B003_01>=50] <- "50 and over"
 ds$age_group <- factor(ds$age_group, levels=c("Under 35","35 - 49","50 and over"), ordered=TRUE)
 
 #Recode employment status

@@ -15,9 +15,6 @@ library(shinyjs)
 
 #setwd(paste0(getwd(),"/app_web"))
 
-#URL where the app is iframed
-domain <- "https://eurofound.acc.fpfis.tech.ec.europa.eu/data/covid-19/"
-
 #Minimun number of cases for a category to be shown
 threshold <- 200
 
@@ -232,7 +229,8 @@ ui <- fluidPage(
                  inputId = "age_filter",
                  label = "Age", 
                  choices = levels(ds$age_group),
-                 selected = levels(ds$age_group)),
+                 selected = levels(ds$age_group)
+                 ),
     
              hidden(
              awesomeCheckboxGroup(
@@ -429,8 +427,9 @@ server <- function(input, output, session) {
         #Only appears if there is data
         validate(need(data_updated(), message=""))
         
-        paste(make_description(input$cat_sel, input$var), 
-              make_excluded_text(data()))})
+        paste0(make_description(input$cat_sel, input$var), " ", 
+              make_excluded_text(data()), " ",
+              "(n=", data()[[5]],")")})
     })
     
     # The user has the option to download the data that was used to
@@ -496,7 +495,6 @@ server <- function(input, output, session) {
     observeEvent(session$clientData$url_search, {
     
       query <- query()  
-      
     
       #Enables extra filters and breakdowns
       if (!is.null(query[["unhide"]])) {

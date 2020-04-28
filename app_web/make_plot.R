@@ -62,7 +62,7 @@ make_plot <- function(data) {
   
   #Add layout elements
   fig <- fig %>% layout(xaxis = list(title = x_label,
-                                     hoverformat='.0f'), 
+                                     hoverformat='.4f'), 
                         yaxis=list(title=NA, autorange="reversed",
                                    categoryorder = "array",
                                    categoryarray = order[[1]]),

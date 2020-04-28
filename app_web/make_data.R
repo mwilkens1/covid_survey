@@ -85,7 +85,9 @@ make_data <- function(inputvar, breakdown, category,
         filter(B001 %in% country_filter) %>%
         droplevels()
   
-        print(nrow(df))
+        #Storing the n for this particular selection
+        count <- nrow(df)
+        
         #This tests whether the overall dataset (all categories combined) is large enough
         validate(
           need(
@@ -136,7 +138,7 @@ make_data <- function(inputvar, breakdown, category,
         # Add the total
         add_row(!!label_breakdown := "Total (EU27)", !!cname := mean_total)
     
-      out <- list(df, cats_below_threshold)
+      out <- list(df, cats_below_threshold, count)
       
       return(out)
       
@@ -180,10 +182,13 @@ make_data <- function(inputvar, breakdown, category,
 
     #Get the excluded countries by running the function once and
     #saving the second element in the list
-    excluded <- calc_data({ds %>%
+    run <- calc_data({ds %>%
                             mutate(!!category[1] := as.numeric(!!sym(inputvar) == category[1]) * 100)},
-                            category[1],category[1])[[2]]
-
+                            category[1],category[1])
+    excluded <- run[[2]]
+    count <- run[[3]]
+    
+    
   #If a numeric variable then just run the function once  
   } else {
     
@@ -191,6 +196,7 @@ make_data <- function(inputvar, breakdown, category,
     
     df <- calc_data(data=ds, inputvar_inner=var, cname="Mean")
     
+    count <- df[[3]]
     excluded <- df[[2]]
     df <- df[[1]]
     
@@ -204,7 +210,7 @@ make_data <- function(inputvar, breakdown, category,
   # - class of the inputvariable
   # - vector of excluded breakdown categories
   # - any special range for plot axis
-  df <- list(df, class, excluded, range)
+  df <- list(df, class, excluded, range, count)
   
   return(df)
 
