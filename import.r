@@ -621,6 +621,8 @@ save(ds, file="app_benchmark/data/ds_2804.Rda")
 save(ds, file="app_web/data/ds_2804.Rda")
 save(varinfo, file="app_web/data/varinfo.rda")
 
+save(varinfo, file="app_response/varinfo.rda")
+
 ### ----------------------- PREPARE MAP ------------------------------ ###
 
 #Read in shapefile and select only relevant countries
