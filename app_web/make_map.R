@@ -29,7 +29,8 @@ make_map <- function(data) {
     shp_20@data <- shp_20@data %>%
       left_join(data, by="Country") 
     
-    shp_20@data$Country_flagged[is.na(shp_20@data$Country_flagged)] <- shp_20@data$Country[is.na(shp_20@data$Country_flagged)]
+    shp_20@data$Country_flagged[is.na(shp_20@data$Country_flagged)] <- 
+      shp_20@data$Country[is.na(shp_20@data$Country_flagged)]
     
     #Number of bins for the plot
     bins <- 8
@@ -40,24 +41,6 @@ make_map <- function(data) {
     #This creats the popup labels
     #It shows 'insufficient data' in case the country has been excluded because of 
     #a lack of data and the value otherwise.
-    labels <- {
-      
-      sprintf("<strong>%s</strong><br/>%s",
-              
-              #First placeholder
-              shp_20$Country_flagged,
-               
-              #second placeholder
-              as.character(
-                  
-                  ifelse(is.na(shp_20[[var]]),
-                  "Insufficient data",
-                  round(shp_20[[var]],4))
-              
-              )
-      )
-      
-    } %>% lapply(HTML)
     
     #Setting the title and suffix of the legend depending on class
     if (class=="numeric") { 
@@ -72,14 +55,29 @@ make_map <- function(data) {
       
     }
     
+    labels <- {
+      
+      sprintf("<strong>%s</strong><br/>%s",
+              
+              #First placeholder
+              shp_20$Country_flagged,
+               
+              #second placeholder
+              as.character(
+                  
+                  ifelse(is.na(shp_20[[var]]),
+                  "Insufficient data",
+                  paste0(round(shp_20[[var]],4),suffix))
+              
+              )
+      )
+      
+    } %>% lapply(HTML)
+    
+    
     # Plotting the map
     # Initialising leaflet with the shapefile
-    fig <- leaflet(shp_20) %>% 
-      #Adding the logo. This is from package leafem
-      addLogo("https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
-              alpha = 0.8, src = "remote",
-              position = "topright",
-              offset.x = 0, offset.y = 0, width = 86, height = 60) %>%
+    fig <- leaflet(shp_20) %>%
       #Using CartoDB positron as the map in the background
       addProviderTiles(providers$CartoDB.Positron) %>%
       #Adding the polygons
@@ -107,7 +105,12 @@ make_map <- function(data) {
                 opacity = 0.8,
                 na.label = "Insufficient data") %>%
       #Sets the default view and zoom level
-      setView(14,52.2, 4)
+      setView(14,52.2, 4) %>% 
+      #Adding the logo. This is from package leafem
+      addLogo("https://www.eurofound.europa.eu/sites/default/files/efcovid19logo.png",
+              alpha = 0.8, src = "remote",
+              position = "topright",
+              offset.x = 0, offset.y = 0, width = 86, height = 60)
      
   }
   

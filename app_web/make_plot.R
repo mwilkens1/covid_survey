@@ -70,7 +70,8 @@ make_plot <- function(data) {
                         hovermode = 'compare',
                         colorway=EF_colours,
                         margin = list(r=100),
-                        images = list(list(source = "https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
+                        images = list(list(
+                             source = "https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
                              xref = "paper",
                              yref = "paper",
                              x= 1,

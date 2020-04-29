@@ -165,6 +165,8 @@ ui <- fluidPage(
       fluidRow(
         column(width=12,
                
+               p(htmlOutput("text_above")),
+               
                #This shows the plot or map (see server)  
                uiOutput('plot_ui')
                
@@ -176,7 +178,7 @@ ui <- fluidPage(
                column(width=8,
                       
                       #Description under the plot
-                      textOutput("description")
+                      textOutput("text_below")
                       
                ),
                
@@ -421,7 +423,7 @@ server <- function(input, output, session) {
     # Applying the make_description and make_excluded_text function to each tab
     # make_description is in 'make_description.R' and creates the little description 
     # of what is shown under the plot. This is rendered as text.
-    output$description <- renderText({
+    output$text_above <- renderText({
       
       #Only appears if there is data
       validate(need(data_updated(), message=""))
@@ -429,14 +431,20 @@ server <- function(input, output, session) {
       paste(make_description(input$cat_sel, input$var), 
             make_filter_description(input$country_filter, input$gender_filter, 
                                     input$age_filter, input$empstat_filter,
-                                    input$education_filter), 
-            make_excluded_text(data()),
-            make_low_reliability_description(data()))
+                                    input$education_filter),
+            make_question_description(input$var))
       
       })
   
-    
-    observe(make_low_reliability_description(data()))
+    output$text_below <- renderText({
+      
+      #Only appears if there is data
+      validate(need(data_updated(), message=""))
+      
+      paste(make_excluded_text(data()),
+            make_low_reliability_description(data()))
+      
+    })
     
     # The user has the option to download the data that was used to
     # create the plot. The make_data function that was called above prepares the data. 
