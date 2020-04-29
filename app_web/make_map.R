@@ -1,5 +1,5 @@
 make_map <- function(data) {
-
+  
   #Variable class
   class <- data[[2]]
   #The dataframe
@@ -10,7 +10,8 @@ make_map <- function(data) {
   
   #Only keeping countries in the shapefile that are also in the data
   shp_20 <- shp_20 %>% 
-    subset(Country %in% levels(data$Country)) 
+    #Not taking into account any flags
+    subset(Country %in% gsub("[*]","",levels(data$Country))) 
 
   #This creates the color palette based on the EF styleguide
   #EF_aqua <- colorRampPalette(c("#AACBE9","#036D9C"))
@@ -21,11 +22,14 @@ make_map <- function(data) {
     
     #Changing to character to avoid a warning
     shp_20@data$Country <- as.character(shp_20@data$Country)
-    data$Country <- as.character(data$Country)
+    data$Country_flagged <- as.character(data$Country)
+    data$Country <- gsub("[*]","",as.character(data$Country))
     
     #Joining the survey data to the map data by country name
     shp_20@data <- shp_20@data %>%
       left_join(data, by="Country") 
+    
+    shp_20@data$Country_flagged[is.na(shp_20@data$Country_flagged)] <- shp_20@data$Country[is.na(shp_20@data$Country_flagged)]
     
     #Number of bins for the plot
     bins <- 8
@@ -39,7 +43,12 @@ make_map <- function(data) {
     labels <- {
       
       sprintf("<strong>%s</strong><br/>%s",
-                shp_20$Country, as.character(
+              
+              #First placeholder
+              shp_20$Country_flagged,
+               
+              #second placeholder
+              as.character(
                   
                   ifelse(is.na(shp_20[[var]]),
                   "Insufficient data",

@@ -17,6 +17,7 @@ library(shinyjs)
 
 #Minimun number of cases for a category to be shown
 threshold <- 100
+threshold_flag <- 200
 
 # This is the full dataset that is loaded into the server
 # This is the version of 28 April
@@ -420,18 +421,22 @@ server <- function(input, output, session) {
     # Applying the make_description and make_excluded_text function to each tab
     # make_description is in 'make_description.R' and creates the little description 
     # of what is shown under the plot. This is rendered as text.
-    # For some reason the text doesnt update when switching breakdowns without the observe
-    observe({
+    output$description <- renderText({
       
-      output$description <- renderText({
-        
-        #Only appears if there is data
-        validate(need(data_updated(), message=""))
-        
-        paste0(make_description(input$cat_sel, input$var), " ", 
-              make_excluded_text(data()), " ",
-              "(n=", data()[[5]],")")})
-    })
+      #Only appears if there is data
+      validate(need(data_updated(), message=""))
+      
+      paste(make_description(input$cat_sel, input$var), 
+            make_filter_description(input$country_filter, input$gender_filter, 
+                                    input$age_filter, input$empstat_filter,
+                                    input$education_filter), 
+            make_excluded_text(data()),
+            make_low_reliability_description(data()))
+      
+      })
+  
+    
+    observe(make_low_reliability_description(data()))
     
     # The user has the option to download the data that was used to
     # create the plot. The make_data function that was called above prepares the data. 
@@ -511,11 +516,6 @@ server <- function(input, output, session) {
          }
       }
       
-      #Update the inputs by calling the functions
-      # updatePickerInput(session, inputId="cat_sel",
-      #                   choices = varinfo[[input$var]]$levels,
-      #                   selected = change_category("cat_sel",input$var))
-
       # Limit the number of variables shown to those in the section 
       # if section parameter is specified
       if (!is.null(query[["section"]])) {

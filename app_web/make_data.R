@@ -88,24 +88,31 @@ make_data <- function(inputvar, breakdown, category,
         #Storing the n for this particular selection
         count <- nrow(df)
         
+        #Calculating effective sample size
+        eff_n <- df %>%
+          summarise(eff_n = (sum(w)^2) / sum(w^2)) 
+        
         #This tests whether the overall dataset (all categories combined) is large enough
         validate(
           need(
-            (nrow(df)>threshold), 
+            (eff_n$eff_n>threshold), 
             "Insufficient data, please change filters")
         )
         
       #Even if the total number is large enough, some categories of the breakdown may not be
       #These are then excluded from the data (not from the totals)
   
-      #Counting the n per category of the breakdown    
+      # Counting the n per category of the breakdown    
+      # As well as effective sample size
       df_count <- df %>%
         group_by(!!sym(breakdown)) %>% 
-        summarise(n = n()) %>%
-        filter(n < threshold)
+        summarise(n_eff = (sum(w)^2) / sum(w^2)) 
+      
+      df_threshold_1 <- df_count %>%
+        filter(n_eff < threshold)
       
       #Getting the categories that are excluded
-      cats_below_threshold <- as.vector(unique(df_count[[1]]))
+      cats_below_threshold <- as.vector(unique(df_threshold_1[[1]]))
       all_cats <- as.vector(unique(df[[breakdown]]))
       #and those that should remain
       not_excluded <- setdiff(all_cats,cats_below_threshold)
@@ -116,12 +123,23 @@ make_data <- function(inputvar, breakdown, category,
       #Not dropping the empty levels of the breakdown here so in case of a map the 
       #countries will appear as NA.
       
+      #Recalculating overall effective sample size again
+      eff_n <- df %>%
+        summarise(eff_n = (sum(w)^2) / sum(w^2)) 
+      
       #General check on the total numbers again 
       validate(
         need(
-          (nrow(df)>threshold), 
+          (eff_n$eff_n>threshold), 
           "Insufficient data, please change filters")
       )
+      
+      #Flagging those with low effective sample size
+      df_threshold_2 <- df_count %>%
+        filter(n_eff >= threshold & n_eff <= threshold_flag)
+      
+      #Getting the categories that are flagged
+      cats_flagged <- as.vector(unique(df_threshold_2[[1]]))
       
       # Actual calculation
       # By the chosen breakdown
@@ -138,7 +156,27 @@ make_data <- function(inputvar, breakdown, category,
         # Add the total
         add_row(!!label_breakdown := "Total (EU27)", !!cname := mean_total)
     
-      out <- list(df, cats_below_threshold, count)
+      #Adding the flags
+      newlevels <- NULL
+      for (level in levels(df[[label_breakdown]])) {
+        
+        if (level %in% cats_flagged) {
+          
+          newlevels <- c(newlevels,paste0(level,"*"))
+          
+        } else {
+          
+          newlevels <- c(newlevels,level)
+          
+        }
+        
+      }
+      
+      df[[label_breakdown]] <- factor(df[[label_breakdown]], 
+                                      levels = levels(df[[label_breakdown]]), 
+                                      labels=newlevels)
+      
+      out <- list(df, cats_below_threshold, count, cats_flagged)
       
       return(out)
       
@@ -187,7 +225,7 @@ make_data <- function(inputvar, breakdown, category,
                             category[1],category[1])
     excluded <- run[[2]]
     count <- run[[3]]
-    
+    flagged <- run[[4]]
     
   #If a numeric variable then just run the function once  
   } else {
@@ -196,8 +234,9 @@ make_data <- function(inputvar, breakdown, category,
     
     df <- calc_data(data=ds, inputvar_inner=var, cname="Mean")
     
-    count <- df[[3]]
     excluded <- df[[2]]
+    count <- df[[3]]
+    flagged <- df[[4]]
     df <- df[[1]]
     
   }    
@@ -210,8 +249,10 @@ make_data <- function(inputvar, breakdown, category,
   # - class of the inputvariable
   # - vector of excluded breakdown categories
   # - any special range for plot axis
-  df <- list(df, class, excluded, range, count)
-  
+  # - the n
+  # - flagged for unreliability
+  df <- list(df, class, excluded, range, count, flagged)
+
   return(df)
 
 }
