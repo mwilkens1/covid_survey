@@ -16,7 +16,7 @@ library(shinyjs)
 #setwd(paste0(getwd(),"/app_web"))
 
 #Minimun number of cases for a category to be shown
-threshold <- 200
+threshold <- 100
 
 # This is the full dataset that is loaded into the server
 # This is the version of 28 April
@@ -33,10 +33,11 @@ load("data/varinfo.rda")
 # Creating vector of the names of factor variables
 factors <- names(list.filter(varinfo, "factor" %in% class))
 
-#Creating a list of named breakdowns
 breakdown_list <- list("Country" = "B001",
                        "Gender" = "B002",
-                       "Age" = "age_group")
+                       "Age" = "age_group",
+                       "Employment status" = "emp_stat",
+                       "Education" = "F004")
 
 # Load the shapefile
 load("data/shp_20.rda")
@@ -130,7 +131,7 @@ ui <- fluidPage(
                # Breakdown widget
                pickerInput(inputId = "breakdown", 
                            label = "By",
-                           choices = breakdown_list,
+                           choices = breakdown_list[1:3],
                            width = "100%")
                            
                ),
@@ -504,14 +505,8 @@ server <- function(input, output, session) {
              show("education_filter")
              show("empstat_filter")
              
-             breakdown_list_full <- list("Country" = "B001",
-                                    "Gender" = "B002",
-                                    "Age" = "age_group",
-                                    "Employment status" = "emp_stat",
-                                    "Education" = "F004")
-             
              updatePickerInput(session,inputId="breakdown",
-                               choices = breakdown_list_full)
+                               choices = breakdown_list)
         
          }
       }
