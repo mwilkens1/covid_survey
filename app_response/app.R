@@ -104,7 +104,7 @@ server <- function(input, output, session) {
    
   source("import.r", local=TRUE)
   
-  levels(ds$B001)[c(28:56,58:60)] <- "Other country"
+  #levels(ds$B001)[c(28:56,58:60)] <- "Other country"
   ds$date <- format(as.Date(ds$STARTED),format='%d-%m')
  
   output$country <- renderPlotly({

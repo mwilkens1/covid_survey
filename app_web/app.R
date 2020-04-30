@@ -90,18 +90,7 @@ subtexts <- lapply(sections, function(s) {
 
 names(subtexts) <- sections
 
-# 
-# #Getting the subtexts of the relevant variables
-# all_variables <- lapply(sections, function(s) {
-#    
-#    list.filter(varinfo, section==s) %>%  list.mapv(label, use.names = FALSE)
-#    
-#  }) %>%  unlist() 
-#  
-# subtexts <- list.filter(varinfo, label %in% all_variables) %>%
-#    list.mapv(subtext,use.names = FALSE)
-# 
-
+#Getting the subtexts of the relevant variables
 get_subtexts <- function(sections) {
   
     lapply(sections, function(s) {

@@ -16,6 +16,11 @@ make_plot <- function(data) {
   breakdown <- colnames(data)[1]
   colnames(data)[1] <- "bdown"
   
+  #setting the height for the plot, which depends on the breakdown
+  if      (breakdown=="Country")           {height <- 500} 
+  else if (breakdown=="Employment status") {height <- 400}
+  else                                     {height <- 300}
+  
   # Adding a space to the categories to increase the distance to the axis
   newlevels <- NULL
   for (level in levels(data$bdown)) {
@@ -96,6 +101,10 @@ make_plot <- function(data) {
                                                    "select2d","lasso2d","autoScale2d",
                                                    "toggleSpikelines","hoverClosestCartesian",
                                                    "hoverCompareCartesian"),
+                        toImageButtonOptions = list(
+                          format = "png",
+                          width = 894, #width of the plot in the iframe
+                          height = height), #depends on the breakdown
                         displaylogo = FALSE)
 }
 
