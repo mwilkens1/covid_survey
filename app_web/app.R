@@ -449,7 +449,8 @@ server <- function(input, output, session) {
     # Applying the make_description and make_excluded_text function to each tab
     # make_description is in 'make_description.R' and creates the little description 
     # of what is shown under the plot. This is rendered as text.
-    output$text_above <- renderText({
+    # Storing them as reactive variables first so they can be used for the csv as well 
+    text_above <- reactive({
       
       #Only appears if there is data
       validate(need(data_updated(), message=""))
@@ -460,11 +461,11 @@ server <- function(input, output, session) {
                                     input$education_filter),
             make_question_description(input$var),
             varinfo[[input$var]]$extra_text
-            )
+      )
       
-      })
-  
-    output$text_below <- renderText({
+    })
+    
+    text_below <- reactive({
       
       #Only appears if there is data
       validate(need(data_updated(), message=""))
@@ -474,6 +475,10 @@ server <- function(input, output, session) {
       
     })
     
+    output$text_above <- renderText(text_above())
+  
+    output$text_below <- renderText(text_below())
+    
     # The user has the option to download the data that was used to
     # create the plot. The make_data function that was called above prepares the data. 
     # This is used to create the plot and seperately its used by the download button.
@@ -482,7 +487,6 @@ server <- function(input, output, session) {
         
              filename = 'EF_data.csv',
              content = function(con) {
-               
                df <- data()[[1]]
                
                # Removing commas from the data for the download data function
@@ -491,8 +495,36 @@ server <- function(input, output, session) {
                df <- df %>%
                  # And rounding to 0 decimals
                  mutate_if(is.numeric,round)
+
+               breakdowns_inverted <- split(rep(names(breakdown_list), 
+                                                lengths(breakdown_list)), 
+                                            unlist(breakdown_list))
+                              
+               title <- paste0('"',"'",varinfo[[input$var]]$label, "' by ", 
+                                tolower(breakdowns_inverted[[input$breakdown]]),'"')
                
-               write.csv(df, con)
+               description <- 
+                 paste0('"',text_above(),'"') %>%
+                 #Removing double spaces
+                 gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", . , perl=TRUE) %>%
+                 #removing any html tags
+                 gsub("<.*?>", "", .) %>%
+                 #Change some wording
+                 gsub("The figure shows", "The data show", .)
+               
+
+               write(title, file=con)
+               
+               write(description,file=con, append=TRUE)
+               
+               write("",file=con, append=TRUE)
+               
+               write.table(df, con, row.names=FALSE, append=TRUE, sep=",", col.names = TRUE)
+               
+               write("",file=con, append=TRUE)
+               
+               write(paste0('"',text_below(),'"'),con,append=TRUE)
+  
              }
            )
 
