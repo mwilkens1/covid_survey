@@ -75,6 +75,44 @@ variables <- lapply(sections, function(s) {
 
 names(variables) <- sections
 
+
+subtexts <- lapply(sections, function(s) {
+  
+  subtexts <- list.filter(varinfo, section==s) %>%  list.mapv(subtext, use.names = FALSE)
+  
+  names <- as.list(names(list.filter(varinfo, section==s)))
+  
+  names(names) <- subtexts
+  
+  return(names)
+  
+})
+
+names(subtexts) <- sections
+
+# 
+# #Getting the subtexts of the relevant variables
+# all_variables <- lapply(sections, function(s) {
+#    
+#    list.filter(varinfo, section==s) %>%  list.mapv(label, use.names = FALSE)
+#    
+#  }) %>%  unlist() 
+#  
+# subtexts <- list.filter(varinfo, label %in% all_variables) %>%
+#    list.mapv(subtext,use.names = FALSE)
+# 
+
+get_subtexts <- function(sections) {
+  
+    lapply(sections, function(s) {
+      
+      list.filter(varinfo, section==s) %>%  list.mapv(subtext, use.names = FALSE)
+      
+  }) %>%  unlist() 
+
+}
+
+
 # Define UI 
 ui <- fluidPage(
       title = "Eurofound Living, working and COVID-19 survey data visualisation",
@@ -109,7 +147,7 @@ ui <- fluidPage(
       
      #necessary for the clipboard button
      rclipboardSetup(),
-     
+    
      fluidRow(
         
         #Question selection
@@ -118,10 +156,9 @@ ui <- fluidPage(
            pickerInput(inputId = "var", 
                        label = "Select question", 
                        choices = variables,
+                       choicesOpt = list(subtext = get_subtexts(sections)),
                        options = list(size = 25),
                        width = "100%")
-           
-               
         )
       ),
       
@@ -432,7 +469,9 @@ server <- function(input, output, session) {
             make_filter_description(input$country_filter, input$gender_filter, 
                                     input$age_filter, input$empstat_filter,
                                     input$education_filter),
-            make_question_description(input$var))
+            make_question_description(input$var),
+            varinfo[[input$var]]$extra_text
+            )
       
       })
   
@@ -529,16 +568,19 @@ server <- function(input, output, session) {
       if (!is.null(query[["section"]])) {
         
         choices_var <- variables[[query[["section"]]]]
+        subtexts <-    get_subtexts(query[["section"]])
         
       } else {
         
         choices_var <- variables
+        subtexts <- get_subtexts(sections)
         
       }
       
       #Update other fields according to parameters in the URL
-      updatePickerInput(session, "var", selected = query[["var"]],
-                                        choices = choices_var)
+       updatePickerInput(session, "var", selected = query[["var"]],
+                                         choices = choices_var,
+                                         choicesOpt = list(subtext = subtexts))
       updatePickerInput(session, "breakdown", selected = query[["breakdown"]])
       updatePickerInput(session, "chart_type", selected = query[["chart_type"]])
     
@@ -701,3 +743,4 @@ server <- function(input, output, session) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+

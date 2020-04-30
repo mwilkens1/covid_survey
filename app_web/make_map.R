@@ -67,7 +67,7 @@ make_map <- function(data) {
                   
                   ifelse(is.na(shp_20[[var]]),
                   "Insufficient data",
-                  paste0(round(shp_20[[var]],4),suffix))
+                  paste0(round(shp_20[[var]],0),suffix))
               
               )
       )
