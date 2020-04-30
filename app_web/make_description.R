@@ -191,10 +191,9 @@ make_filter_description <- function(country_filter, gender_filter, age_filter,em
 
 make_question_description <- function(inputvar) {
   
-  question <- paste0(" when asked ",HTML("<b>[question]</b>"),".")  
+  question <- paste0(" when asked: ",HTML("<b>",varinfo[[inputvar]]$question,"</b>"))  
   
 }
-
 
 
 make_excluded_text <- function(data) {

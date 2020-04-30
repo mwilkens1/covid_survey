@@ -512,7 +512,7 @@ server <- function(input, output, session) {
                  #Change some wording
                  gsub("The figure shows", "The data show", .)
                
-
+               #Writing the data plus surrounding text
                write(title, file=con)
                
                write(description,file=con, append=TRUE)
@@ -524,7 +524,12 @@ server <- function(input, output, session) {
                write("",file=con, append=TRUE)
                
                write(paste0('"',text_below(),'"'),con,append=TRUE)
-  
+               
+               write("",file=con, append=TRUE)
+               
+               write(paste0('"',"Cite as: Eurofound (2020), Living, Working and COVID-19 dataset, Dublin, http://eurofound.link/covid19data",'"'),
+                     file=con, append=TRUE)
+               
              }
            )
 

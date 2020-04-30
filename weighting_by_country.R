@@ -108,41 +108,6 @@ weigh_data <- function(ds, minimum_weight, trim_lower, trim_upper) {
     })
     names(country_targets) <- country_names
     
-    #Creating a list of paramters per country
-    
-    # country_params <- list(
-    #   
-    #   "Austria"         = list("cap" = 6),
-    #   "Belgium"         = list("cap" = 6),
-    #   "Bulgaria"        = list("cap" = 6),
-    #   "Croatia"         = list("cap" = 6),
-    #   "Cyprus"          = list("cap" = 6),
-    #   "Czechia"         = list("cap" = 6),
-    #   "Denmark"         = list("cap" = 6),
-    #   "Estonia"         = list("cap" = 6),
-    #   "Finland"         = list("cap" = 6),
-    #   "France"          = list("cap" = 6),
-    #   "Germany"         = list("cap" = 6),
-    #   "Greece"          = list("cap" = 6),  
-    #   "Hungary"         = list("cap" = 6),
-    #   "Ireland"         = list("cap" = 6),
-    #   "Italy"           = list("cap" = 6),
-    #   "Latvia"          = list("cap" = 6),
-    #   "Lithuania"       = list("cap" = 6), 
-    #   "Luxembourg"      = list("cap" = 6),
-    #   "Malta"           = list("cap" = 6),
-    #   "Netherlands"     = list("cap" = 6),
-    #   "Poland"          = list("cap" = 6),
-    #   "Portugal"        = list("cap" = 6),
-    #   "Romania"         = list("cap" = 6),
-    #   "Slovakia"        = list("cap" = 6),
-    #   "Slovenia"        = list("cap" = 6),
-    #   "Spain"           = list("cap" = 6),
-    #   "Sweden"          = list("cap" = 6),
-    #   "United Kingdom"  = list("cap" = 6)
-    #   
-    # )
-    
     set.seed(1)
     
     #### Applying raking function to each country ###
@@ -166,7 +131,9 @@ weigh_data <- function(ds, minimum_weight, trim_lower, trim_upper) {
                                cap=cap,
                                choosemethod = "total",
                                type = "pctlim",
-                               pctlim = 0.05
+                               pctlim = 0.05,
+                               maxit = 5000,
+                               convcrit = 0.001
          )
       
         if (raking$converge=="Complete convergence was achieved" &

@@ -107,7 +107,7 @@ make_data <- function(inputvar, breakdown, category,
       df_count <- df %>%
         group_by(!!sym(breakdown)) %>% 
         summarise(n_eff = (sum(w)^2) / sum(w^2)) 
-      
+
       df_threshold_1 <- df_count %>%
         filter(n_eff < threshold)
       

@@ -14,7 +14,7 @@ library(sjstats)
 library(rlist)
 
 #Loading the raw data from the extract script
-load("data/ds_raw.Rda")
+load("data/ds_raw_2804.Rda")
 
 # Variable und Value Labels
 ds$EU27 = ds$B001>0 & ds$B001<28
@@ -435,6 +435,55 @@ for (var in c("C007_01","C007_02","C007_03","C007_04","C007_05")) {
 }
 
 
+#Full questions
+varinfo[["C001_01"]]$question <- "All things considered, how satisfied would you say you are with your life these days?"
+varinfo[["C002_01"]]$question <- "Taking all things together on a scale of 1 to 10, how happy would you say you are?"
+varinfo[["C003_01"]]$question <- "To what extent do you agree or disagree with the following statement? I am optimistic about my future."
+varinfo[["C003_02"]]$question <- "To what extent do you agree or disagree with the following statement? I am optimistic about my children’s or grandchildren’s future."
+varinfo[["C003_03"]]$question <- "To what extent do you agree or disagree with the following statement? I find it difficult to deal with important problems that come up in my life."
+varinfo[["C003_04"]]$question <- "To what extent do you agree or disagree with the following statement? When things go wrong in my life, it generally takes me a long time to get back to normal."
+varinfo[["C004_01"]]$question <- "In general, how is your health?"
+varinfo[["C005_01"]]$question <- "How have you been feeling over the last two weeks? I have felt cheerful and in good spirits."
+varinfo[["C005_02"]]$question <- "How have you been feeling over the last two weeks? I have felt calm and relaxed."
+varinfo[["C005_03"]]$question <- "How have you been feeling over the last two weeks? I have felt active and vigorous."
+varinfo[["C005_04"]]$question <- "How have you been feeling over the last two weeks? I woke up feeling fresh and rested."
+varinfo[["C005_05"]]$question <- "How have you been feeling over the last two weeks? My daily life has been filled with things that interest me."
+varinfo[["C006_01"]]$question <- "How have you been feeling over the last two weeks? I have felt particularly tense."
+varinfo[["C006_02"]]$question <- "How have you been feeling over the last two weeks? I have felt lonely."
+varinfo[["C006_03"]]$question <- "How have you been feeling over the last two weeks? I have felt downhearted and depressed."
+varinfo[["C007_01"]]$question <- "Please tell me how much you personally trust each of the following institutions? The news media."
+varinfo[["C007_02"]]$question <- "Please tell me how much you personally trust each of the following institutions? The police."
+varinfo[["C007_03"]]$question <- "Please tell me how much you personally trust each of the following institutions? Your country's government."
+varinfo[["C007_04"]]$question <- "Please tell me how much you personally trust each of the following institutions? The European Union."
+varinfo[["C007_05"]]$question <- "Please tell me how much you personally trust each of the following institutions? The healthcare system."
+varinfo[["D002"]]$question    <- "During the COVID-19 pandemic have you lost your job(s)/contract(s)?"
+varinfo[["D003"]]$question    <- "During the COVID-19 pandemic have your working hours...?"
+varinfo[["D004_01"]]$question <- "How often in the last 2 weeks, have you kept worrying about work when you were not working?" 
+varinfo[["D004_02"]]$question <- "How often in the last 2 weeks, have you felt too tired after work to do some of the household jobs which need to be done."
+varinfo[["D004_03"]]$question <- "How often in the last 2 weeks, have you found that your job prevented you from giving the time you wanted to your family?"
+varinfo[["D004_04"]]$question <- "How often in the last 2 weeks, have you found it difficult to concentrate on your job because of your family responsibilities?"
+varinfo[["D004_05"]]$question <- "How often in the last 2 weeks, have you found that your family responsibilities prevented you from giving the time you should to your job?"
+varinfo[["D007_01"]]$question <- "Have you started to work from home as a result of the COVID-19 situation?"
+varinfo[["D008_01"]]$question <- "How likely or unlikely do you think it is that you might lose your job in the next 3 months?"
+varinfo[["E001_01"]]$question <- "A household may have different sources of income and more than one household member may contribute to it. Thinking of your household’s total monthly income: is your household able to make ends meet?" 
+varinfo[["E002_01"]]$question <- "Thinking about food, over the last two weeks did you or someone else in your household change your diet because money was needed for other essentials? Gone without fresh fruit and vegetables."
+varinfo[["E002_02"]]$question <- "Thinking about food, over the last two weeks did you or someone else in your household change your diet because money was needed for other essentials? Bought cheaper cuts of meat or bought less than wanted."
+varinfo[["E003_01"]]$question <- "Has your household been in arrears at any time during the past 3 months, that is, unable to pay as scheduled... Rent or mortgage payments for accommodation?"
+varinfo[["E003_02"]]$question <- "Has your household been in arrears at any time during the past 3 months, that is, unable to pay as scheduled... Utility bills, such as electricity, water, gas?"
+varinfo[["E003_03"]]$question <- "Has your household been in arrears at any time during the past 3 months, that is, unable to pay as scheduled... Payments related to consumer loans, including credit card overdrafts (to buy electrical appliances, a car, furniture, etc.)?"
+varinfo[["E003_04"]]$question <- "Has your household been in arrears at any time during the past 3 months, that is, unable to pay as scheduled... Telephone, mobile or internet connection bills?"
+varinfo[["E003_05"]]$question <- "Has your household been in arrears at any time during the past 3 months, that is, unable to pay as scheduled... Payments related to informal loans from friends or relatives not living in your household?"
+varinfo[["E003_06"]]$question <- "Has your household been in arrears at any time during the past 3 months, that is, unable to pay as scheduled... Payments for healthcare or health insurance?"
+varinfo[["E004"]]$question    <- "When you compare the financial situation of your household 3 months ago and now would you say it has become better, worse or remained the same?"
+varinfo[["E005"]]$question    <- "Thinking of the financial situation of your household in 3 months’ time do you think it will become better, worse or remain the same?"
+varinfo[["E006"]]$question    <- "If your household would not receive any income, how long would your household be able to maintain the same standard of living using savings?"
+varinfo[["E007_01"]]$question <- "How likely or unlikely do you think it is that you will need to leave your accommodation within the next 6 months because you can no longer afford it?"
+varinfo[["E008_01"]]$question <- "From whom would you get support if you needed help around the house when ill?"
+varinfo[["E008_02"]]$question <- "From whom would you get support if you needed advice about a serious personal or family matter?"
+varinfo[["E008_03"]]$question <- "From whom would you get support if you needed help when looking for a job?"
+varinfo[["E008_04"]]$question <- "From whom would you get support if you were feeling a bit depressed and wanting someone to talk to?"
+varinfo[["E008_05"]]$question <- "From whom would you get support if you needed help in looking after your children?"
+varinfo[["E008_06"]]$question <- "From whom would you get support if you needed help with shopping?"
 
 #Define subtexts
 for (var in c("C003_01","C003_02","C003_03","C003_04")) {
@@ -641,7 +690,7 @@ ds <- ds %>%
 
 ### ----------------------- SAVING FILES FOR APPS ------------------------------ ###
 
-save(weights, file="data/weights.rda")
+save(weights, file="data/weights_2804.rda")
 save(varinfo, file="app_benchmark/data/varinfo.rda")
 save(ds, file="app_benchmark/data/ds_2804.Rda")
 

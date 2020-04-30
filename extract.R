@@ -80,4 +80,4 @@ attr(ds, "date") = Sys.time()
 attr(ds, "server") = "https://s2survey.net"
 
 #Saving the raw data
-save(ds, file="data/ds_raw.Rda")
+save(ds, file="data/ds_raw_3004.Rda")
