@@ -765,13 +765,48 @@ server <- function(input, output, session) {
       
     }
     
-    
     #Putting it together: create URL to reproduce the plot
     make_url <- reactive({
       
       #Getting the parent URL, because the shiny app is iframed
-      runjs('var currentUrl = document.referrer; Shiny.onInputChange("currentUrl",currentUrl);')
-
+      #Piece of code by Dimitrios to construct the correct URL in case the user
+      #is disconnected and reloads from within the iframe.
+      
+      runjs(
+        'var baseUrl = "https://www.eurofound.europa.eu/data/covid-19";
+        
+        var referrer = document.referrer;
+        
+        if(referrer && referrer.includes("europa")) {
+        
+          baseUrl = referrer;
+          
+        } else {
+    
+          var queryString = window.location.search;
+          var urlParams = new URLSearchParams(queryString);
+          var section = urlParams.get("section");
+          if (section === "Quality of life") {
+            baseUrl += "/quality-of-life"; 
+          } else if (section === "Work and teleworking") {
+            baseUrl += "/working-teleworking";
+          } else if (section === "Financial situation") {
+            baseUrl += "/financial-situation";
+          } 
+          
+        }
+        
+        Shiny.onInputChange("referrer",referrer);
+        Shiny.onInputChange("queryString",queryString);
+        Shiny.onInputChange("sectionjs",section);
+        Shiny.onInputChange("currentUrl",baseUrl);'
+      )
+      
+      print(paste("baseUrl: ",input$currentUrl))
+      print(paste("referrer: ",input$referrer))
+      print(paste("section: ",input$sectionjs))
+      print(paste("queryString: ",input$queryString))
+      
       # Question selection, category selection, breakdown selection and chart type
       # are dependent on the tab so parameters are made for each of tab
 
@@ -832,4 +867,5 @@ server <- function(input, output, session) {
 
 ###----------------------------------RUN----------------------------------###
 shinyApp(ui = ui, server = server)
+
 
