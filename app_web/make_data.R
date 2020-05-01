@@ -61,8 +61,8 @@ make_data <- function(inputvar, breakdown, category,
       df <- data %>%
         #Select needed variables
         select(inputvar_inner, breakdown, B002, age_group, F004, B001, emp_stat, w, EU27) %>%
-        #Filter out NA's in inputvar and breakdown
-        filter(!is.na(!!sym(inputvar_inner)), !is.na(!!sym(breakdown)), !is.na(w)) %>%
+        #Filter out NA's in inputvar
+        filter(!is.na(!!sym(inputvar_inner)), !is.na(w)) %>%
         #Applying gender age, education and employment status filters
         {if (gender_filter!="All") filter(., B002 %in% gender_filter) else .} %>%
         {if (length(age_filter)!=length(levels(.$age_group))) 
@@ -81,8 +81,9 @@ make_data <- function(inputvar, breakdown, category,
       mean_total <- weighted.mean(df_total[[inputvar_inner]], df_total$w)    
       
       df <- df %>%
-        #Applying the country filter now
-        filter(B001 %in% country_filter) %>%
+        #Applying the country filter now as well as a filter for missing values in the breakdown
+        filter(B001 %in% country_filter,
+               !is.na(!!sym(breakdown))) %>%
         droplevels()
   
         #Storing the n for this particular selection

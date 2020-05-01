@@ -1,5 +1,5 @@
 #Function for making the plot
-make_plot <- function(data) {
+make_plot <- function(data, mobile) {
 
   #Variable class
   class <- data[[2]]
@@ -55,36 +55,55 @@ make_plot <- function(data) {
     }
   
     # To order the plot, we need to specify its ordering in an array
-    order <- data[order(-data$Total),]  
+    order <- data[order(-data$Total),][[1]]
     
   }
   
   if (breakdown!="Country") {
     
-    order <- data[[1]]
+    order <- levels(data[[1]])
     
   }
   
+  font_size <- ifelse(mobile==TRUE,9,12)
+  margin    <- ifelse(mobile==TRUE,0,100)
+  
   #Add layout elements
   fig <- fig %>% layout(xaxis = list(title = x_label,
-                                     hoverformat='.4f'), 
+                                     hoverformat='.1f'), 
                         yaxis=list(title=NA, autorange="reversed",
                                    categoryorder = "array",
-                                   categoryarray = order[[1]]),
+                                   categoryarray = order),
+                        font = list(size=font_size),
                         barmode = 'stack',
                         hovermode = 'compare',
                         colorway=EF_colours,
-                        margin = list(r=100),
-                        images = list(list(
-                             source = "https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
-                             xref = "paper",
-                             yref = "paper",
-                             x= 1,
-                             y= 0.15,
-                             sizex = 0.15,
-                             sizey = 0.15,
-                             opacity = 0.6))
-                        )
+                        margin = list(r=margin))
+  
+  if (mobile==FALSE) {
+    
+    fig <- fig %>% layout(images = list(list(
+      source = "https://upload.wikimedia.org/wikipedia/en/4/45/Eurofound_Logo_2016.png",
+      xref = "paper",
+      yref = "paper",
+      x= 1,
+      y= 0.15,
+      sizex = 0.15,
+      sizey = 0.15,
+      opacity = 0.6)))
+    
+  } else {
+    
+    fig <- fig %>% layout(legend = 
+                            list(xanchor = "left",
+                                 yanchor = "top",
+                                 x = 0.5,
+                                 orientation="h"),
+                          xaxis=list(fixedrange=TRUE),
+                          yaxis=list(fixedrange=TRUE)) %>%
+                    config(displayModeBar = F)
+    }
+
   
   #Adding custom range for the x-axis if a range exists
   if (!is.null(range) & class=="numeric") {

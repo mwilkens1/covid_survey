@@ -14,7 +14,7 @@ library(sjstats)
 library(rlist)
 
 #Loading the raw data from the extract script
-load("data/ds_raw_2804.Rda")
+load("data/ds_raw_0105.Rda")
 
 # Variable und Value Labels
 ds$EU27 = ds$B001>0 & ds$B001<28
@@ -223,7 +223,7 @@ comment(ds$B001) = "Country"
 comment(ds$B002) = "Gender"
 comment(ds$B003_01) = "Age"
 comment(ds$C001_01) = "Life satisfaction"
-comment(ds$C002_01) = "Percieved happiness"
+comment(ds$C002_01) = "Happiness"
 comment(ds$C003_01) = "I am optimistic about my future"
 comment(ds$C003_02) = "I am optimistic about my children's or grandchildren's future"
 comment(ds$C003_03) = "I find it difficult to deal with important problems that come up in my life"
@@ -463,6 +463,8 @@ varinfo[["D004_02"]]$question <- "How often in the last 2 weeks, have you felt t
 varinfo[["D004_03"]]$question <- "How often in the last 2 weeks, have you found that your job prevented you from giving the time you wanted to your family?"
 varinfo[["D004_04"]]$question <- "How often in the last 2 weeks, have you found it difficult to concentrate on your job because of your family responsibilities?"
 varinfo[["D004_05"]]$question <- "How often in the last 2 weeks, have you found that your family responsibilities prevented you from giving the time you should to your job?"
+varinfo[["D005_01"]]$question <- "Over the last 2 weeks, how often have you worked in your free time to meet work demands?"
+varinfo[["D006_01"]]$question <- "How frequently did you work from home before the outbreak of COVID-19?"
 varinfo[["D007_01"]]$question <- "Have you started to work from home as a result of the COVID-19 situation?"
 varinfo[["D008_01"]]$question <- "How likely or unlikely do you think it is that you might lose your job in the next 3 months?"
 varinfo[["E001_01"]]$question <- "A household may have different sources of income and more than one household member may contribute to it. Thinking of your household’s total monthly income: is your household able to make ends meet?" 
@@ -657,11 +659,23 @@ table(ds$clean)
 
 source("weighting_by_country.R",local=TRUE)
 
-weights <- ds %>% 
-           filter(clean==TRUE) %>%
-           weigh_data(minimum_weight = 0.05,
-                      trim_lower = 0.16,
-                      trim_upper = 6)
+# Running the weight 3 times to make sure its identical
+# If insufficient iterations or too low convergence criterion the algorithm
+# might converge at different points. 
+weights <- lapply(1:3, function(i) {
+  
+  weights <- ds %>% 
+    filter(clean==TRUE) %>%
+    weigh_data(minimum_weight = 0.05,
+               trim_lower = 0.16,
+               trim_upper = 6)
+  
+})
+
+stopifnot(weights[[1]]$w_country == weights[[2]]$w_country)
+stopifnot(weights[[2]]$w_country == weights[[3]]$w_country)
+
+weights <- weights[[1]]
 
 ds <- weights %>%
   select(CASE, w, w_trimmed, w_gross, w_gross_trim) %>%
@@ -670,13 +684,13 @@ ds <- weights %>%
 ### ----------------------- SAVING FILES FOR ANALYSIS ------------------------------ ###
 #note: these include unclean interviews and unweighted data.
 
-save(ds, file="data/ds_2804_full.Rda")
+save(ds, file="data/ds_0105_full.Rda")
 
 library(foreign)
-write.dta(ds, "data/ds_2804_full.dta")
+write.dta(ds, "data/ds_0105_full.dta")
 
 library(haven)
-write_sav(ds, "data/ds_2804_full.sav")
+write_sav(ds, "data/ds_0105_full.sav")
 
 ### ------------------ DROPPING VARIABLES --------------------------- ###
 
@@ -690,11 +704,11 @@ ds <- ds %>%
 
 ### ----------------------- SAVING FILES FOR APPS ------------------------------ ###
 
-save(weights, file="data/weights_2804.rda")
+save(weights, file="data/weights_0105.rda")
 save(varinfo, file="app_benchmark/data/varinfo.rda")
-save(ds, file="app_benchmark/data/ds_2804.Rda")
+save(ds, file="app_benchmark/data/ds_0105.Rda")
 
-save(ds, file="app_web/data/ds_2804.Rda")
+save(ds, file="app_web/data/ds_0105.Rda")
 save(varinfo, file="app_web/data/varinfo.rda")
 
 save(varinfo, file="app_response/varinfo.rda")

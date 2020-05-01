@@ -13,6 +13,8 @@ library(rclipboard)
 library(rlist)
 library(shinyjs)
 
+###------------------------------PREPARATION--------------------------------###
+
 #setwd(paste0(getwd(),"/app_web"))
 
 #Minimun number of cases for a category to be shown
@@ -21,7 +23,7 @@ threshold_flag <- 200
 
 # This is the full dataset that is loaded into the server
 # This is the version of 28 April
-load("data/ds_2804.Rda")
+load("data/ds_0105.Rda")
 
 #renaming the weight variable
 ds <- ds %>% 
@@ -52,7 +54,7 @@ source("make_plot.R", local=TRUE)
 #Function that creates the map
 source("make_map.R", local=TRUE)
 
-#Function that creates the description under the figure
+#Function that creates the description under and above the figure
 source("make_description.R", local=TRUE)
 
 #EF colour scheme
@@ -75,7 +77,7 @@ variables <- lapply(sections, function(s) {
 
 names(variables) <- sections
 
-
+#Creating lists of subtexts for each question
 subtexts <- lapply(sections, function(s) {
   
   subtexts <- list.filter(varinfo, section==s) %>%  list.mapv(subtext, use.names = FALSE)
@@ -90,7 +92,8 @@ subtexts <- lapply(sections, function(s) {
 
 names(subtexts) <- sections
 
-#Getting the subtexts of the relevant variables
+# Because a vector is required for the subtexts, we need to extract the subtexts
+# from the lists given a particular section.
 get_subtexts <- function(sections) {
   
     lapply(sections, function(s) {
@@ -101,8 +104,39 @@ get_subtexts <- function(sections) {
 
 }
 
+# JS function for detecting mobile
+# https://g3rv4.com/2017/08/shiny-detect-mobile-browsers
+mobileDetect <- function(inputId, value = 0) {
+  tagList(
+    singleton(tags$head(tags$script(
+    '
+      var isMobileBinding = new Shiny.InputBinding();
+      $.extend(isMobileBinding, {
+        find: function(scope) {
+          return $(scope).find(".mobile-element");
+          callback();
+        },
+        getValue: function(el) {
+          return /((iPhone)|(iPod)|(iPad)|(Android)|(BlackBerry))/.test(navigator.userAgent)
+        },
+        setValue: function(el, value) {
+        },
+        subscribe: function(el, callback) {
+        },
+        unsubscribe: function(el) {
+        }
+      });
+      
+      Shiny.inputBindings.register(isMobileBinding);
+      '
+      ))),
+    tags$input(id = inputId,
+               class = "mobile-element",
+               type = "hidden")
+  )
+}
 
-# Define UI 
+###----------------------------------UI----------------------------------###
 ui <- fluidPage(
       title = "Eurofound Living, working and COVID-19 survey data visualisation",
       theme = shinytheme("cerulean"), #The app fills the entire page. It will be iframed into the website
@@ -110,45 +144,54 @@ ui <- fluidPage(
       # Activate shiny javascript
       useShinyjs(),
 
+      #Activating the mobile detect function
+      mobileDetect('isMobile'),
+      
       tags$head( # refers to the head of the html document
         #This CSS code is required to change the position and
-        #formatting of the messsage box you get when you click
+        #formatting of the messsage box you get when you click 'copy link'. 
         #Also it makes sure that the variable selection is on top of the leaflet legend
-        #'copy link'. 
         tags$style(
-          HTML(".shiny-notification {
-             position:fixed;
-             top: calc(50%);
-             right: calc(0%);
-             background-color: #00b462;
-             color: #ffffff;
-          }
-          
-           .leaflet-top, .leaflet-bottom {
-             z-index: unset !important;
-           }
-           
-           .leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar .leaflet-control-zoom {
-             z-index: 10000000000 !important;
-           }
-          ")
+          HTML("
+            .shiny-notification {
+               position:fixed;
+               top: calc(50%);
+               right: calc(0%);
+               background-color: #00b462;
+               color: #ffffff;
+            }
+            
+             .leaflet-top, .leaflet-bottom {
+               z-index: unset !important;
+             }
+             
+             .leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar .leaflet-control-zoom {
+               z-index: 10000000000 !important;
+             }
+            ")
         )),                
       
-     #necessary for the clipboard button
+      uiOutput("leaflet_legend_font"),
+      
+     # Necessary for the clipboard button
      rclipboardSetup(),
     
-     fluidRow(
+     fluidRow( #Top fluid row
         
         #Question selection
-        column(width=12,
-               
-           pickerInput(inputId = "var", 
-                       label = "Select question", 
-                       choices = variables,
-                       choicesOpt = list(subtext = get_subtexts(sections)),
-                       options = list(size = 25),
-                       width = "100%")
-        )
+        column(width=12, #Spanning across, which is the width of the window or the iframe
+
+             pickerInput(inputId = "var", #the id the server uses to refer to this input
+                         label = "Select question", 
+                         # 3 lists of variables per section. Our 3 pages are set up such that with a 
+                         # URL paramter one of these lists is chosen and you will see all three if you 
+                         # run it independent from the 
+                         choices = variables, 
+                         choicesOpt = list(subtext = get_subtexts(sections)),
+                         options = list(size = 25),
+                         width = "100%")
+          )
+      
       ),
       
       fluidRow(
@@ -276,15 +319,35 @@ ui <- fluidPage(
              img(style="position: absolute; right: 0px; bottom: 0px",
                  src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
                  align="right",
-                 height=25))
+                 height=20))
           )
       )
 
 )
 
 
-# Define server 
+###----------------------------------SERVER----------------------------------###
 server <- function(input, output, session) {
+
+    output$leaflet_legend_font <- renderUI({
+    
+      if (input$isMobile==TRUE) {
+      
+        tagList(
+          tags$head(
+            tags$style(
+              HTML('.leaflet .legend {
+    
+                      font-size: 8px !important;
+                      
+                    }')
+              )
+            )
+          )
+      }
+      
+    })
+  
   
     # Querying the URL parameters: these are generated when a user clicks 'copy link'
     # Also, a paramater is inbedded on the page on which the shiny app is displayed 
@@ -394,14 +457,14 @@ server <- function(input, output, session) {
       #Also require the categories to be updated
       req(cats_updated())
       #Call the make_map function with the data created
-      make_map(data())
+      make_map(data(), input$isMobile)
       
     })
     
     output$plot <- renderPlotly({
       
       req(cats_updated())                                  
-      make_plot(data())
+      make_plot(data(), input$isMobile)
       
      })
     
@@ -493,8 +556,8 @@ server <- function(input, output, session) {
                colnames(df) <- gsub(",", "_", colnames(df))
                
                df <- df %>%
-                 # And rounding to 0 decimals
-                 mutate_if(is.numeric,round)
+                 # And rounding to 1 decimals
+                 mutate_if(is.numeric,round,digits=1)
 
                breakdowns_inverted <- split(rep(names(breakdown_list), 
                                                 lengths(breakdown_list)), 
@@ -527,7 +590,7 @@ server <- function(input, output, session) {
                
                write("",file=con, append=TRUE)
                
-               write(paste0('"',"Cite as: Eurofound (2020), Living, Working and COVID-19 dataset, Dublin, http://eurofound.link/covid19data",'"'),
+               write(paste0('"',"Cite as: Eurofound (2020), Living, working and COVID-19 dataset, Dublin, http://eurofound.link/covid19data",'"'),
                      file=con, append=TRUE)
                
              }
@@ -604,7 +667,7 @@ server <- function(input, output, session) {
       }
       
       #Update other fields according to parameters in the URL
-       updatePickerInput(session, "var", selected = query[["var"]],
+      updatePickerInput(session, "var", selected = query[["var"]],
                                          choices = choices_var,
                                          choicesOpt = list(subtext = subtexts))
       updatePickerInput(session, "breakdown", selected = query[["breakdown"]])
@@ -767,6 +830,6 @@ server <- function(input, output, session) {
 
 }
 
-# Run the application 
+###----------------------------------RUN----------------------------------###
 shinyApp(ui = ui, server = server)
 

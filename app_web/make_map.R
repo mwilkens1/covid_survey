@@ -1,4 +1,4 @@
-make_map <- function(data) {
+make_map <- function(data, mobile) {
   
   #Variable class
   class <- data[[2]]
@@ -67,13 +67,15 @@ make_map <- function(data) {
                   
                   ifelse(is.na(shp_20[[var]]),
                   "Insufficient data",
-                  paste0(round(shp_20[[var]],0),suffix))
+                  paste0(round(shp_20[[var]],1),suffix))
               
               )
       )
       
     } %>% lapply(HTML)
     
+    zoom <- ifelse(mobile,3,4)
+    logoscale <- ifelse(mobile,0.8,1)
     
     # Plotting the map
     # Initialising leaflet with the shapefile
@@ -101,16 +103,17 @@ make_map <- function(data) {
       addLegend("bottomright", pal = pal, 
                 values = as.formula(paste("~",var)),
                 title = title,
-                labFormat = labelFormat(suffix = suffix),
+                labFormat = labelFormat(suffix = suffix,
+                                        digits = 1),
                 opacity = 0.8,
                 na.label = "Insufficient data") %>%
       #Sets the default view and zoom level
-      setView(14,52.2, 4) %>% 
+      setView(12,52.2, zoom) %>% 
       #Adding the logo. This is from package leafem
       addLogo("https://www.eurofound.europa.eu/sites/default/files/efcovid19logo.png",
               alpha = 0.8, src = "remote",
               position = "topright",
-              offset.x = 0, offset.y = 0, width = 86, height = 60)
+              offset.x = 0, offset.y = 0, width = logoscale*86, height = logoscale*60)
      
   }
   
