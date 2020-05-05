@@ -40,7 +40,7 @@ make_plot <- function(data, mobile) {
     fig <- fig %>% add_trace(y=data[[1]], x = ~Mean, name = 'Mean', data=data, type='bar')
     
     # To order the plot, we need to specify its ordering in an array
-    order <- data[order(-data$Mean),]
+    order <- data[order(-data$Mean),][[1]]
     
   } else {
 

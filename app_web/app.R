@@ -801,12 +801,7 @@ server <- function(input, output, session) {
         Shiny.onInputChange("sectionjs",section);
         Shiny.onInputChange("currentUrl",baseUrl);'
       )
-      
-      print(paste("baseUrl: ",input$currentUrl))
-      print(paste("referrer: ",input$referrer))
-      print(paste("section: ",input$sectionjs))
-      print(paste("queryString: ",input$queryString))
-      
+
       # Question selection, category selection, breakdown selection and chart type
       # are dependent on the tab so parameters are made for each of tab
 
