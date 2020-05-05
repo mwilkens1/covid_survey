@@ -136,6 +136,7 @@ mobileDetect <- function(inputId, value = 0) {
   )
 }
 
+
 ###----------------------------------UI----------------------------------###
 ui <- fluidPage(
       title = "Eurofound Living, working and COVID-19 survey data visualisation",
@@ -147,30 +148,10 @@ ui <- fluidPage(
       #Activating the mobile detect function
       mobileDetect('isMobile'),
       
-      tags$head( # refers to the head of the html document
-        #This CSS code is required to change the position and
-        #formatting of the messsage box you get when you click 'copy link'. 
-        #Also it makes sure that the variable selection is on top of the leaflet legend
-        tags$style(
-          HTML("
-            .shiny-notification {
-               position:fixed;
-               top: calc(50%);
-               right: calc(0%);
-               background-color: #00b462;
-               color: #ffffff;
-            }
-            
-             .leaflet-top, .leaflet-bottom {
-               z-index: unset !important;
-             }
-             
-             .leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar .leaflet-control-zoom {
-               z-index: 10000000000 !important;
-             }
-            ")
-        )),                
-      
+      includeCSS("custom.css"),
+      includeCSS("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700"),
+      includeCSS("https://fonts.googleapis.com/css?family=Source+Serif+Pro:600,700"),
+
       uiOutput("leaflet_legend_font"),
       
      # Necessary for the clipboard button
@@ -181,14 +162,14 @@ ui <- fluidPage(
         #Question selection
         column(width=12, #Spanning across, which is the width of the window or the iframe
 
-             pickerInput(inputId = "var", #the id the server uses to refer to this input
+              pickerInput(inputId = "var", #the id the server uses to refer to this input
                          label = "Select question", 
                          # 3 lists of variables per section. Our 3 pages are set up such that with a 
                          # URL paramter one of these lists is chosen and you will see all three if you 
                          # run it independent from the 
                          choices = variables, 
                          choicesOpt = list(subtext = get_subtexts(sections)),
-                         options = list(size = 25),
+                         options = list(size = 25, style = "btn-default btn-lg"),
                          width = "100%")
           )
       
@@ -262,7 +243,7 @@ ui <- fluidPage(
       ),
       
      #Section under the plot for filtering data
-     h3("Filter data"),
+     h4("Filter data"),
      
      fluidRow(
 

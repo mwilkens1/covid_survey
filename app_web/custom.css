@@ -1,0 +1,92 @@
+.shiny-notification {
+ position:fixed;
+ top: calc(50%);
+ right: calc(0%);
+ background-color: #00b462;
+ color: #ffffff;
+}
+
+.leaflet-top, .leaflet-bottom {
+ z-index: unset !important;
+}
+
+.leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar .leaflet-control-zoom {
+ z-index: 10000000000 !important;
+}
+
+html {
+font-family: sans-serif;
+line-height: 1.4;
+-webkit-text-size-adjust: 100%;
+-ms-text-size-adjust: 100%;
+-ms-overflow-style: scrollbar;
+-webkit-tap-highlight-color: transparent;
+}
+
+body {
+margin: 0;
+font-family: 'Source Sans Pro', sans-serif;
+font-size: 1.6rem;
+font-weight: 300;
+line-height: 1.4;
+color: #000000;
+text-align: left;
+background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  margin-bottom: 0.5rem;
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 700;
+  line-height: 1.2;
+
+}
+
+h1, .h1 {
+	font-family: 'Source Serif Pro', serif;
+  	font-size: 60px;
+	color: #fff;
+	line-height: 1.2;
+	font-weight: 700;
+}
+
+h2, .h2 {
+	font-family: 'Source Serif Pro', serif;
+  	font-size: 36px;
+	color: #067EB1;
+	line-height: 1.2;
+	font-weight: 700;
+}
+
+h3, .h3 {
+	font-family: 'Source Serif Pro', serif;
+	font-size: 30px;
+	color: #067EB1;
+	line-height: 1.2;
+	font-weight: 700;
+}
+
+h4, .h4 {
+  	font-family: 'Source Serif Pro', serif;
+	font-size: 26px;
+	color: #4c4c4c;
+	line-height: 1.2;
+	font-weight: 700;
+}
+
+h5, .h5 {
+  font-family: 'Source Serif Pro', serif;
+	font-size: 24px;
+	color: #fff;
+	line-height: 1.2;
+	font-weight: 700;
+}
+
+h6, .h6 {
+  	font-family: 'Source Serif Pro', serif;
+	font-size: 20px;
+	color: #fff;
+	line-height: 1.2;
+	font-weight: 700;
+}
