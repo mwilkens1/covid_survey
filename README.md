@@ -54,4 +54,4 @@ The folder /app_benchmark contains the files for creating the dashboard for trac
 
 ## Results<a name="results"></a>
 
-The web visualiation can be found on the Eurofound website (link to follow). It is deployed on shinyapps.io. The benchmark is only available to respondents to the survey. The dashboard is not publicly available. 
+The web visualiation can be found on the [Eurofound website](https://www.eurofound.europa.eu/data/covid-19). It is deployed on shinyapps.io. The benchmark is only available to respondents to the survey. The dashboard is not publicly available. 
