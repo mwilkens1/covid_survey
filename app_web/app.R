@@ -315,7 +315,7 @@ ui <- fluidPage(
             
            ),
            
-           a(target="_blank", href="https://github.com/mwilkens1/covid_survey/",
+           a(target="_blank", href="https://github.com/eurofound/covid_survey/",
              img(style="position: absolute; right: 0px; bottom: 0px",
                  src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
                  align="right",
