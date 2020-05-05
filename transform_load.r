@@ -490,7 +490,7 @@ varinfo[["E008_06"]]$question <- "From whom would you get support if you needed 
 #Define subtexts
 for (var in c("C003_01","C003_02","C003_03","C003_04")) {
   
-  varinfo[[var]]$subtext <- "Optimism and resiliance"
+  varinfo[[var]]$subtext <- "Optimism and resilience"
   
 }
 
@@ -543,7 +543,7 @@ for (var in c("E003_01","E003_02","E003_03","E003_04","E003_05","E003_06")) {
 
 for (var in c("E004","E005","E006","E007_01")) {
   
-  varinfo[[var]]$subtext <- "Depriviation"
+  varinfo[[var]]$subtext <- "Deprivation"
   
 }
 
