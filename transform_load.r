@@ -412,7 +412,7 @@ varinfo <- lapply(colnames(ds), function(x) {
 names(varinfo) <- colnames(ds)
 
 #Define extra descriptions
-varinfo[["C001_01"]]$extra_text <-"Life satistfaction is measured on a scale of 1 to 10, 
+varinfo[["C001_01"]]$extra_text <-"Life satisfaction is measured on a scale of 1 to 10, 
   where 1 means very dissatisfied and 10 means very satisfied." 
 varinfo[["C002_01"]]$extra_text <-"Happiness is measured on a scale of 1 to 10, 
   where 1 means very unhappy and 10 means very happy." 
@@ -434,6 +434,7 @@ for (var in c("C007_01","C007_02","C007_03","C007_04","C007_05")) {
   
 }
 
+varinfo[["D007_01"]]$extra_text <- "Slovenia is excluded from the data for this question because of a translation issue."
 
 #Full questions
 varinfo[["C001_01"]]$question <- "All things considered, how satisfied would you say you are with your life these days?"
