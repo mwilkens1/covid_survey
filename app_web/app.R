@@ -12,6 +12,7 @@ library(htmltools)
 library(rclipboard)
 library(rlist)
 library(shinyjs)
+library(lubridate)
 
 ###------------------------------PREPARATION--------------------------------###
 
@@ -136,6 +137,9 @@ mobileDetect <- function(inputId, value = 0) {
   )
 }
 
+# Styling for the benchmark text
+benchmark_text_style <- "style='font-size:20px; color:red;'"
+
 ###----------------------------------UI----------------------------------###
 ui <- fluidPage(
       title = "Eurofound Living, working and COVID-19 survey data visualisation",
@@ -180,7 +184,7 @@ ui <- fluidPage(
         
         #Question selection
         column(width=12, #Spanning across, which is the width of the window or the iframe
-
+               
              pickerInput(inputId = "var", #the id the server uses to refer to this input
                          label = "Select question", 
                          # 3 lists of variables per section. Our 3 pages are set up such that with a 
@@ -234,8 +238,12 @@ ui <- fluidPage(
       fluidRow(
         column(width=12,
                
+               #Description of the plot
                p(htmlOutput("text_above")),
                
+               #benchmark text
+               p(htmlOutput('benchmark_text')),
+
                #This shows the plot or map (see server)  
                uiOutput('plot_ui')
                
@@ -348,7 +356,8 @@ server <- function(input, output, session) {
       
     })
   
-  
+    
+    
     # Querying the URL parameters: these are generated when a user clicks 'copy link'
     # Also, a paramater is inbedded on the page on which the shiny app is displayed 
     # on the Eurofound website via an iframe (see below).
@@ -356,6 +365,70 @@ server <- function(input, output, session) {
     # can be reproduced
     query <- reactive(parseQueryString(session$clientData$url_search))
 
+    # This downloads the data from the respondent who has opened the app in benchmark mode
+    respondent_data <- reactive({
+      
+      # If benchmark the parameter IigtHmB will appear with a case number
+      case <- query()[["IigtHmB"]]
+
+      # If there is a ?IigtHmB parameter, get the data from the dataset or download the data from the API
+      if (!is.null(case)) {
+        
+        if (case %in% ds$CASE) {
+
+          return(ds[ds$CASE==as.character(case),])
+          
+        } else {
+          
+          source("secrets.R")
+          source("get_data_from_api.R")
+          source("label_and_recode.R")
+          
+          #Create quuery to API with &cases=casnumber
+          data <- paste0("https://s2survey.net/eurofound/?act=", token,"&cases=",case) %>%
+            get_data_from_api() %>% #Query the API  
+            label_and_recode() #Recode the data
+          
+          return(data)  
+          
+        }
+        
+        #if no paramter return NULL  
+      } else {return(NULL)}
+      
+    })
+
+    
+    benchmark_text <- function(inputvar) {
+      
+      # If there is a parameter added to the URL then print the answer to
+      # the selected question in the app
+      if (!is.null(respondent_data())) {
+        
+        #This calls the repondentdata selects the input variable. 
+        #This is then wrapped in a paste to create a string.
+        #It includes styling: bold and other elements defined in benchmark_text_style
+
+        month <- month(respondent_data()[["STARTED"]], label=TRUE,abbr=FALSE)
+        
+        answer <- respondent_data()[[inputvar]]
+        
+        if (is.na(answer)) {
+          
+          answer <- "Don't know or no answer"
+          
+        }
+        
+        paste0("Your answer to this question in ",month,": <b ",
+              benchmark_text_style,">",answer,"</b>")
+        
+        # If not return NULL which results in not showing anything  
+      } else {NULL}
+      
+    }
+    
+    output$benchmark_text <- renderText(benchmark_text(input$var))
+    
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
     # The user is supposed to select a category belonging 
@@ -637,7 +710,7 @@ server <- function(input, output, session) {
     observeEvent(session$clientData$url_search, {
     
       query <- query()  
-    
+      
       #Enables extra filters and breakdowns
       if (!is.null(query[["unhide"]])) {
         
