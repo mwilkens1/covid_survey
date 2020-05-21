@@ -415,7 +415,7 @@ server <- function(input, output, session) {
         
         if (is.na(answer)) {
           
-          answer <- "Don't know or no answer"
+          answer <- "Don't know, no answer or not applicable"
           
         }
         
@@ -447,8 +447,13 @@ server <- function(input, output, session) {
         #Selected categories are the ones in the URL parameters
         selected <- cat_sel[[1]]
         
-        #If not get the default preferred levels    
-      } else {
+      
+        #If in benchmark mode, show all categories  
+      } else if (!is.null(query()[["IigtHmB"]])) {
+        
+        selected <- varinfo[[input$var]]$levels
+        
+      } else {#If not get the default preferred levels    
         
         selected <- varinfo[[input$var]]$default_levels
         
@@ -457,7 +462,7 @@ server <- function(input, output, session) {
       # Only do this if the selected variable is a factor variable
       # 'factors' is defined
       if (input$var %in% factors) {
-      
+        
         pickerInput(inputId = "cat_sel", 
                     label = "Select category", 
                     choices = varinfo[[input$var]]$levels,
@@ -744,8 +749,20 @@ server <- function(input, output, session) {
                                          choices = choices_var,
                                          choicesOpt = list(subtext = subtexts))
       updatePickerInput(session, "breakdown", selected = query[["breakdown"]])
-      updatePickerInput(session, "chart_type", selected = query[["chart_type"]])
-    
+      
+      # Always show bar if in benchmark mode
+      if (!is.null(query[["IigtHmB"]])) {
+      
+        updatePickerInput(session, "chart_type", selected = "Bar")
+      
+        #If not in benchmark mode, select what it in the parameter
+      } else { 
+        
+        updatePickerInput(session, "chart_type", selected = query[["chart_type"]])
+      
+      }
+      
+      
       #Update filters. These are not dependent on the tabs
       for (filter in c("country_filter","empstat_filter")) {
         
@@ -772,6 +789,8 @@ server <- function(input, output, session) {
         }    
         
       }
+      
+      #In benchmark mode, show all categories of categorical questions by default
       
     })
     
