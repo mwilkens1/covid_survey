@@ -243,6 +243,8 @@ ui <- fluidPage(
                
                #benchmark text
                p(htmlOutput('benchmark_text')),
+               
+               p(htmlOutput("link_to_next_survey")),
 
                #This shows the plot or map (see server)  
                uiOutput('plot_ui')
@@ -428,6 +430,19 @@ server <- function(input, output, session) {
     }
     
     output$benchmark_text <- renderText(benchmark_text(input$var))
+    
+    
+    output$link_to_next_survey <- renderText({
+      
+      case <- query()[["IigtHmB"]]
+      
+      if (!is.null(case)) {
+       
+        paste0("Click here to start the next survey: <a href='https://www.eurofound.europa.eu/?case=",case,"'>[link to survey]</a>")
+         
+      }
+       
+    } )
     
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
