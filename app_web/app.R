@@ -138,7 +138,7 @@ mobileDetect <- function(inputId, value = 0) {
 }
 
 # Styling for the benchmark text
-benchmark_text_style <- "style='font-size:20px; color:red;'"
+benchmark_text_style <- "style='font-size:20px;'"
 
 ###----------------------------------UI----------------------------------###
 ui <- fluidPage(
