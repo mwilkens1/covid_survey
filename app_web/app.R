@@ -157,13 +157,13 @@ ui <- fluidPage(
         #Also it makes sure that the variable selection is on top of the leaflet legend
         tags$style(
           HTML("
-            .shiny-notification {
-               position:fixed;
-               top: calc(50%);
-               right: calc(0%);
-               background-color: #00b462;
-               color: #ffffff;
-            }
+             .shiny-notification {
+                position:fixed;
+                top: calc(50%);
+                right: calc(0%);
+                background-color: #00b462;
+                color: #ffffff;
+             }
             
              .leaflet-top, .leaflet-bottom {
                z-index: unset !important;
@@ -171,8 +171,7 @@ ui <- fluidPage(
              
              .leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar .leaflet-control-zoom {
                z-index: 10000000000 !important;
-             }
-            ")
+             }")
         )),                
       
       uiOutput("leaflet_legend_font"),
@@ -359,7 +358,6 @@ server <- function(input, output, session) {
     })
   
     
-    
     # Querying the URL parameters: these are generated when a user clicks 'copy link'
     # Also, a paramater is inbedded on the page on which the shiny app is displayed 
     # on the Eurofound website via an iframe (see below).
@@ -373,7 +371,8 @@ server <- function(input, output, session) {
       # If benchmark the parameter IigtHmB will appear with a case number
       case <- query()[["IigtHmB"]]
 
-      # If there is a ?IigtHmB parameter, get the data from the dataset or download the data from the API
+      # If there is a ?IigtHmB parameter, get the data from the dataset 
+      # or download the data from the API
       if (!is.null(case)) {
         
         if (case %in% ds$CASE) {
@@ -438,7 +437,8 @@ server <- function(input, output, session) {
       
       if (!is.null(case)) {
        
-        paste0("Click here to start the next survey: <a href='https://www.eurofound.europa.eu/?case=",case,"'>[link to survey]</a>")
+        paste0("Click here to start the next survey: <a href='https://www.eurofound.europa.eu/?case=",
+               case,"'>[link to survey]</a>")
          
       }
        
@@ -683,7 +683,8 @@ server <- function(input, output, session) {
                
                write("",file=con, append=TRUE)
                
-               write(paste0('"',"Cite as: Eurofound (2020), Living, working and COVID-19 dataset, Dublin, http://eurofound.link/covid19data",'"'),
+               write(paste0('"',"Cite as: Eurofound (2020), Living, 
+                            working and COVID-19 dataset, Dublin, http://eurofound.link/covid19data",'"'),
                      file=con, append=TRUE)
                
              }
@@ -804,9 +805,7 @@ server <- function(input, output, session) {
         }    
         
       }
-      
-      #In benchmark mode, show all categories of categorical questions by default
-      
+
     })
     
     #This part constructs a URL with parameters that can be copied by the user 
@@ -969,5 +968,3 @@ server <- function(input, output, session) {
 
 ###----------------------------------RUN----------------------------------###
 shinyApp(ui = ui, server = server)
-
-
