@@ -8,7 +8,7 @@
 source("secrets.R")
 ds_file = paste0("https://s2survey.net/eurofound/?act=", token)
 
-source("app_web/get_data_from_api.R")
+source("wave1/get_data_from_api.R")
 
 ds <- get_data_from_api(ds_file)
 

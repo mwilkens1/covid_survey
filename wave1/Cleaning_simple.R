@@ -24,7 +24,7 @@ ds_clean <- ds[!(ds$LASTPAGE<27),]
 ##Rule: Valid interview if there are less than 50% item nonresponse throughout the survey
 # This only refers to the survey questions, not the demographics and paradata
 
-questions <- names(list.filter(varinfo, section %in% c('Quality of life','Work and teleworking','Financial situation')))
+questions <- colnames(ds)[(startsWith(colnames(ds),"C0") | startsWith(colnames(ds),"D0") | startsWith(colnames(ds),"E0")) & colnames(ds)!="C008" & colnames(ds)!="D001"]
 
 ds_clean$item_na_count <- apply(is.na(ds_clean[questions]), 1, sum)
 

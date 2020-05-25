@@ -1,4 +1,3 @@
-
 #Correcting for unauthorised routing
 
 ds$D003[ds$D001!="Employee" & ds$D001!="Self-employed with employees" & ds$D001!="Self-employed without employees" | is.na(ds$D001)] <- NA
@@ -19,13 +18,13 @@ ds$D007_01[ds$B001=="Slovenia"] <- NA
 
 ##Dropouts
 ##Rule: Valid interview if the respondent did not drop out before page 27 (household questions). 
-
 ds_clean <- ds[!(ds$LASTPAGE<27),]
 
-# Loading the list with al the variable info
-load("varinfo.rda")
+##Item nonresponse
+##Rule: Valid interview if there are less than 50% item nonresponse throughout the survey
+# This only refers to the survey questions, not the demographics and paradata
 
-questions <- names(list.filter(varinfo, section %in% c('Quality of life','Work and teleworking','Financial situation')))
+questions <- colnames(ds)[(startsWith(colnames(ds),"C0") | startsWith(colnames(ds),"D0") | startsWith(colnames(ds),"E0")) & colnames(ds)!="C008" & colnames(ds)!="D001"]
 
 ds_clean$item_na_count <- apply(is.na(ds_clean[questions]), 1, sum)
 
@@ -33,7 +32,7 @@ ds_clean$item_na_count <- apply(is.na(ds_clean[questions]), 1, sum)
 #Employees, self-employed and unemployed had more questions then other people (50 vs 40) so 
 #we need to account for that.
 ds_clean$long <- ds_clean$D001=="Employee" | ds_clean$D001=="Self-employed with employees" |
-  ds_clean$D001=="Self-employed without employees" 
+                 ds_clean$D001=="Self-employed without employees" 
 ds_clean$long[is.na(ds_clean$D001)] <- FALSE
 
 ds_clean$items[ds_clean$long==TRUE] <- 50
@@ -62,14 +61,14 @@ under21 <- (ds_clean$B003_01<21)
 over21 <- (ds_clean$B003_01>20)
 
 ds_clean$youngtertiary <- case_when (tertiary & under21 ~ 1,
-                                     primary ~ 0,
-                                     secondary ~ 0,
-                                     edu_na ~ 0,
-                                     over21 ~ 0)
+                               primary ~ 0,
+                               secondary ~ 0,
+                               edu_na ~ 0,
+                               over21 ~ 0)
 ds_clean <- mutate(ds_clean, F004 = ifelse(youngtertiary == 1, 2, F004))
 ds_clean$F004 <- factor(ds_clean$F004,
-                        levels = c(1,2,3),
-                        labels = c("Primary", "Secondary", "Tertiary"))
+                  levels = c(1,2,3),
+                  labels = c("Primary", "Secondary", "Tertiary"))
 drops <- "youngtertiary"
 ds_clean <- ds_clean[, ! names(ds_clean) %in% drops, drop = F]
 

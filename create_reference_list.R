@@ -1,31 +1,5 @@
-# TRANSFORM AND LOAD
-# While reading this file, comments will be created for all variables.
-# The comments for values will be stored as attributes (attr) as well.
- 
-#setwd("C:/Users/mwi/OneDrive - Eurofound/covid_survey/")
-
-library(dplyr)
-library(rgdal)
-library(car)
-library(survey)
-library(weights)
-library(anesrake)
-library(sjstats)
-library(rlist)
-
-#Loading the raw data from the extract script
-load("data/ds_raw_0105.Rda")
-
-### ----------------------- LABELING AND RECODING ------------------------------ ###
-
-source("app_web/label_and_recode.R")
-ds <- label_and_recode(ds)
-
-### ----------------------- CREATING REFERENCE LIST ------------------------------ ###
-
 ##Here a list is created with all sorts of info per variable
-
-varinfo <- lapply(colnames(ds), function(x) { 
+varinfo <- lapply(colnames(ds_merged_full), function(x) { 
   
   list( # section
     section = {if (startsWith(x, "C0")) {"Quality of life"} 
@@ -34,7 +8,7 @@ varinfo <- lapply(colnames(ds), function(x) {
       else {"other"}},
     
     # label will appear in the selection box
-    label = comment(ds[[x]]),
+    label = comment(ds_merged_full[[x]]),
     
     # smaller subtext after the label
     subtext = "",
@@ -46,22 +20,40 @@ varinfo <- lapply(colnames(ds), function(x) {
     extra_text = NULL,
     
     # class of the variable
-    class = class(ds[[x]]),
+    class = class(ds_merged_full[[x]]),
     
     # any levels in case its a categorical variable
-    levels = levels(ds[[x]]),
-  
+    levels = levels(ds_merged_full[[x]]),
+    
     # default selected levels is initated
     default_levels = NULL,
     
     # Special axis range for numerical variables
     range = NULL
     
-    )
+  )
   
 })
 
-names(varinfo) <- colnames(ds)
+names(varinfo) <- colnames(ds_merged_full)
+
+
+
+###FAKE VARIABLES ###
+
+varinfo[["random_factor"]]$section <- "Work and teleworking"
+varinfo[["random_factor"]]$label <- "Fake random factor variable"
+varinfo[["random_factor"]]$subtext <- "Fake"
+varinfo[["random_factor"]]$question <- "What is the fake random factor?"
+varinfo[["random_factor"]]$default_levels <- "TRUE"
+
+varinfo[["random_numeric"]]$section <- "Work and teleworking"
+varinfo[["random_numeric"]]$label <- "Fake random numeric variable"
+varinfo[["random_numeric"]]$subtext <- "Fake"
+varinfo[["random_numeric"]]$question <- "What is the fake random number?"
+
+
+
 
 #Define extra descriptions
 varinfo[["C001_01"]]$extra_text <-"Life satisfaction is measured on a scale of 1 to 10, 
@@ -210,7 +202,7 @@ for (var in c("E008_01","E008_02","E008_03","E008_04","E008_05","E008_06")) {
 
 #Specifying special axis ranges
 for (var in c("C001_01","C002_01","C007_01","C007_02",
-             "C007_03","C007_04","C007_05")) {
+              "C007_03","C007_04","C007_05")) {
   
   varinfo[[var]]$range <- c(1,10)
   
@@ -290,7 +282,7 @@ varinfo$C008$section <- "other"
 varinfo$D001$section <- "other"
 
 #Getting list of all numeric variables
-nums <- unlist(lapply(ds, is.numeric))  
+nums <- unlist(lapply(ds_merged_full, is.numeric))  
 num_vars <- names(nums[nums==TRUE])
 
 #Set an arbitrary string for numerical variables
@@ -298,86 +290,6 @@ for (var in num_vars) {
   
   varinfo[[var]]$levels <- "None"
   varinfo[[var]]$default_levels <- "None"
-
+  
 }
 
-### ----------------------- CLEANING ------------------------------ ###
-
-#Cleaning the data
-source("Cleaning_simple.R", local = TRUE)
-
-ds <- ds %>%
-  left_join(ds_clean[c("CASE","clean")], by="CASE")
-
-ds$clean[is.na(ds$clean)] <- FALSE
-
-table(ds$clean)
-
-### ----------------------- WEIGHTING ------------------------------ ###
-
-source("weighting_by_country.R",local=TRUE)
-
-# Running the weight 3 times to make sure its identical
-# If insufficient iterations or too low convergence criterion the algorithm
-# might converge at different points. 
-weights <- lapply(1:3, function(i) {
-  
-  weights <- ds %>% 
-    filter(clean==TRUE) %>%
-    weigh_data(minimum_weight = 0.05,
-               trim_lower = 0.16,
-               trim_upper = 6)
-  
-})
-
-stopifnot(weights[[1]]$w_country == weights[[2]]$w_country)
-stopifnot(weights[[2]]$w_country == weights[[3]]$w_country)
-
-weights <- weights[[1]]
-
-ds <- weights %>%
-  select(CASE, w, w_trimmed, w_gross, w_gross_trim) %>%
-  right_join(ds, by="CASE")
-
-### ----------------------- SAVING FILES FOR ANALYSIS ------------------------------ ###
-#note: these include unclean interviews and unweighted data.
-
-save(ds, file="data/ds_0105_full.Rda")
-
-library(foreign)
-write.dta(ds, "data/ds_0105_full.dta")
-
-library(haven)
-write_sav(ds, "data/ds_0105_full.sav")
-
-### ------------------ DROPPING VARIABLES --------------------------- ###
-
-to_drop <- names(list.filter(varinfo, section=='other'))
-
-#Removing unclean and unweighted cases
-ds <- ds %>%
-  select(-one_of(to_drop)) %>%
-  filter(clean==TRUE, !is.na(w)) %>%
-  droplevels()
-
-### ----------------------- SAVING FILES FOR APPS ------------------------------ ###
-
-save(weights, file="data/weights_0105.rda")
-save(varinfo, file="app_benchmark/data/varinfo.rda")
-save(ds, file="app_benchmark/data/ds_0105.Rda")
-
-save(ds, file="app_web/data/ds_0105.Rda")
-save(varinfo, file="app_web/data/varinfo.rda")
-
-save(varinfo, file="app_response/varinfo.rda")
-
-### ----------------------- PREPARE MAP ------------------------------ ###
-
-#Read in shapefile and select only relevant countries
-shp_20 <- readOGR("shapefiles","CNTR_RG_20M_2016_4326") %>% 
-  subset(NAME_ENGL %in% levels(ds$B001)) 
-
-shp_20$NAME_ENGL <- droplevels(shp_20$NAME_ENGL)
-shp_20$Country <- shp_20$NAME_ENGL
-
-save(shp_20, file = "app_web/data/shp_20.rda")

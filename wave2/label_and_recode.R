@@ -1,80 +1,12 @@
-get_respondent_data <- function(case) {
+# Function to label and recode the data pulled from the sosci API (ds)
+# Assumes a certain set of questions so needs to be adjusted to the dataset of choice.
 
-  source("secrets.R")
-  ds_file = paste0("https://s2survey.net/eurofound/?act=", token,"&cases=",case)
-  
-  ds = read.table(
-    file=ds_file, encoding="UTF-8",
-    header = FALSE, sep = "\t", quote = "\"",
-    dec = ".",# row.names = "CASE",
-    col.names = c(
-      "CASE","SERIAL","REF","QUESTNNR","MODE","LANGUAGE","STARTED","B001","B002",
-      "B003_01","C001_01","C002_01","C003_01","C003_02","C003_03","C003_04","C004_01",
-      "C005_01","C005_02","C005_03","C005_04","C005_05","C006_01","C006_02","C006_03",
-      "C007_01","C007_02","C007_03","C007_04","C007_05","C008","D001","D002","D003",
-      "D004_01","D004_02","D004_03","D004_04","D004_05","D005_01","D006_01","D007_01",
-      "D008_01","E001_01","E002_01","E002_02","E003_01","E003_02","E003_03","E003_04",
-      "E003_05","E003_06","E004","E005","E006","E007_01","E008_01","E008_02",
-      "E008_03","E008_04","E008_05","E008_06","F001_01","F001_01a","F002_01",
-      "F003_01","F003_01a","F003_02","F003_02a","F004","F005","F006","F007","F008",
-      "F009","F010","F011","F012","F013","F014","F015","F016","F017","F018","F019",
-      "F020","F021","F022_01","TIME001","TIME002","TIME003","TIME004","TIME005",
-      "TIME006","TIME007","TIME008","TIME009","TIME010","TIME011","TIME012","TIME013",
-      "TIME014","TIME015","TIME016","TIME017","TIME018","TIME019","TIME020","TIME021",
-      "TIME022","TIME023","TIME024","TIME025","TIME026","TIME027","TIME028",
-      "TIME_SUM","MAILSENT","LASTDATA","FINISHED","Q_VIEWER","LASTPAGE","MAXPAGE"
-    ),
-    as.is = TRUE,
-    colClasses = c(
-      CASE="numeric", SERIAL="character", REF="character", QUESTNNR="character",
-      MODE="character", LANGUAGE="character", STARTED="POSIXct", B001="numeric",
-      B002="numeric", B003_01="numeric", C001_01="numeric", C002_01="numeric",
-      C003_01="numeric", C003_02="numeric", C003_03="numeric", C003_04="numeric",
-      C004_01="numeric", C005_01="numeric", C005_02="numeric", C005_03="numeric",
-      C005_04="numeric", C005_05="numeric", C006_01="numeric", C006_02="numeric",
-      C006_03="numeric", C007_01="numeric", C007_02="numeric", C007_03="numeric",
-      C007_04="numeric", C007_05="numeric", C008="numeric", D001="numeric",
-      D002="numeric", D003="numeric", D004_01="numeric", D004_02="numeric",
-      D004_03="numeric", D004_04="numeric", D004_05="numeric", D005_01="numeric",
-      D006_01="numeric", D007_01="numeric", D008_01="numeric", E001_01="numeric",
-      E002_01="numeric", E002_02="numeric", E003_01="numeric", E003_02="numeric",
-      E003_03="numeric", E003_04="numeric", E003_05="numeric", E003_06="numeric",
-      E004="numeric", E005="numeric", E006="numeric", E007_01="numeric",
-      E008_01="numeric", E008_02="numeric", E008_03="numeric", E008_04="numeric",
-      E008_05="numeric", E008_06="numeric", F001_01="numeric", F001_01a="logical",
-      F002_01="numeric", F003_01="numeric", F003_01a="logical", F003_02="numeric",
-      F003_02a="logical", F004="numeric", F005="numeric", F006="numeric",
-      F007="numeric", F008="numeric", F009="numeric", F010="numeric",
-      F011="numeric", F012="numeric", F013="numeric", F014="numeric",
-      F015="numeric", F016="numeric", F017="numeric", F018="numeric",
-      F019="numeric", F020="numeric", F021="character", F022_01="numeric",
-      TIME001="integer", TIME002="integer", TIME003="integer", TIME004="integer",
-      TIME005="integer", TIME006="integer", TIME007="integer", TIME008="integer",
-      TIME009="integer", TIME010="integer", TIME011="integer", TIME012="integer",
-      TIME013="integer", TIME014="integer", TIME015="integer", TIME016="integer",
-      TIME017="integer", TIME018="integer", TIME019="integer", TIME020="integer",
-      TIME021="integer", TIME022="integer", TIME023="integer", TIME024="integer",
-      TIME025="integer", TIME026="integer", TIME027="integer", TIME028="integer",
-      TIME_SUM="integer", MAILSENT="POSIXct", LASTDATA="POSIXct",
-      FINISHED="logical", Q_VIEWER="logical", LASTPAGE="numeric",
-      MAXPAGE="numeric"
-    ),
-    skip = 1,
-    check.names = TRUE, fill = TRUE,
-    strip.white = FALSE, blank.lines.skip = TRUE,
-    comment.char = "",
-    na.strings = ""
-  )
-  
-  rm(ds_file)
-  
-  attr(ds, "project") = "eurofound"
-  attr(ds, "description") = "Eurofound e-survey Living, working and COVID-19 "
-  attr(ds, "date") = Sys.time()
-  attr(ds, "server") = "https://s2survey.net"
-  
+label_and_recode <- function(ds) {
+
   # Variable und Value Labels
-  ds$B001 = factor(ds$B001, levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60"), labels=c("Austria","Belgium","Bulgaria","Croatia","Republic of Cyprus","Czechia","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden","Albania","Bosnia and Herzegovina","Brazil","Canada","China","Colombia","Ecuador","Egypt","India","Indonesia","Iran","Japan","Mexico","Montenegro","Morocco","Netherlands Antilles","Nigeria","North Macedonia","Pakistan","Philippines","Russia","Republic of Serbia","South Korea","Switzerland","Suriname","Syria","Thailand","Turkey","Ukraine","United Kingdom","United States","Vietnam","Other country"), ordered=FALSE)
+  ds$EU27 = ds$B001>0 & ds$B001<28
+  ds$B001 = factor(ds$B001, levels=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60"), labels=c("Austria","Belgium","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden","Albania","Bosnia and Herzegovina","Brazil","Canada","China","Colombia","Ecuador","Egypt","India","Indonesia","Iran","Japan","Mexico","Montenegro","Morocco","Netherlands Antilles","Nigeria","North Macedonia","Pakistan","Philippines","Russia","Serbia","South Korea","Switzerland","Suriname","Syria","Thailand","Turkey","Ukraine","United Kingdom","United States","Vietnam","Other country"), ordered=FALSE)
+  levels(ds$B001)[c(28:56,58:60)] <- "Other country"
   ds$B002 = factor(ds$B002, levels=c("1","2","3"), labels=c("Male","Female","In another way"), ordered=FALSE)
   ds$C008 = factor(ds$C008, levels=c("1","2","3","4"), labels=c("The open countryside","A village/small town","A medium to large town","A city or city suburb"), ordered=FALSE)
   ds$D001 = factor(ds$D001, levels=c("1","2","3","4","5","6","7","8"), labels=c("Employee","Self-employed with employees","Self-employed without employees","Unemployed","Unable to work due to long-term illness or disability","Retired","Full-time homemaker/fulfilling domestic tasks","Student"), ordered=FALSE)
@@ -82,8 +14,8 @@ get_respondent_data <- function(case) {
   ds$D003 = factor(ds$D003, levels=c("1","2","3","4","5"), labels=c("Decreased a lot","Decreased a little","Stayed the same","Increased a little","Increased a lot"), ordered=FALSE)
   ds$E004 = factor(ds$E004, levels=c("1","2","3"), labels=c("Better","The same","Worse"), ordered=TRUE)
   ds$E005 = factor(ds$E005, levels=c("1","2","3"), labels=c("Better","The same","Worse"), ordered=TRUE)
-  ds$E006 = factor(ds$E006, levels=c("1","2","3","4","5"), labels=c("Less than 3 months","From 3 up to 6 months","From 6 up to 12 months","12 or more months","No savings"), ordered=FALSE)
-  ds$F004 = factor(ds$F004, levels=c("1","2","3"), labels=c("Primary education","Secondary education","Tertiary education"), ordered=TRUE)
+  ds$E006 = factor(ds$E006, levels=c("5","1","2","3","4"), labels=c("No savings","Less than 3 months","From 3 up to 6 months","From 6 up to 12 months","12 or more months"), ordered=TRUE)
+  ds$F004 = factor(ds$F004, levels=c("1","2","3"), labels=c("Primary","Secondary","Tertiary"), ordered=TRUE)
   ds$F005 = factor(ds$F005, levels=c("1","2","3"), labels=c("East Austria","South Austria","West Austria"), ordered=FALSE)
   ds$F006 = factor(ds$F006, levels=c("1","2","3"), labels=c("Brussels Capital Region","Flemish Region","Walloon Region"), ordered=FALSE)
   ds$F007 = factor(ds$F007, levels=c("1","2"), labels=c("Northern and Eastern Bulgaria","South-Western and South-Central Bulgaria"), ordered=FALSE)
@@ -224,7 +156,7 @@ get_respondent_data <- function(case) {
                        labels=c("Daily","Several times a week","Several times a month","Less often","Never"),
                        ordered=TRUE)
   
-  ds$D007_01 <- factor(ds$C007_01, levels=c(1,2), labels=c("No","Yes"))
+  ds$D007_01 <- factor(ds$D007_01, levels=c(1,2), labels=c("No","Yes"))
   
   for (var in c("D008_01","E007_01")) {
     
@@ -249,7 +181,7 @@ get_respondent_data <- function(case) {
     
     ds[[var]] <- factor(ds[[var]], levels=c(1,2,3,4), 
                         labels=c("A member of your family/relative",
-                                 "A friend, neighbour, or someone else, who does not belong to your family/relatives",
+                                 "A friend, neighbour, or someone else",
                                  "A service provider, institution or organisation",
                                  "Nobody"))
   }
@@ -279,56 +211,56 @@ get_respondent_data <- function(case) {
   comment(ds$B003_01) = "Age"
   comment(ds$C001_01) = "Life satisfaction"
   comment(ds$C002_01) = "Happiness"
-  comment(ds$C003_01) = "Optimism and resilience: I am optimistic about my future"
-  comment(ds$C003_02) = "Optimism and resilience: I am optimistic about my children's or grandchildren's future"
-  comment(ds$C003_03) = "Optimism and resilience: I find it difficult to deal with important problems that come up in my life"
-  comment(ds$C003_04) = "Optimism and resilience: When things go wrong in my life, it generally takes me a long time to get back to normal"
-  comment(ds$C004_01) = "Health"
-  comment(ds$C005_01) = "WHO-5: I have felt cheerful and in good spirits"
-  comment(ds$C005_02) = "WHO-5: I have felt calm and relaxed"
-  comment(ds$C005_03) = "WHO-5: I have felt active and vigorous"
-  comment(ds$C005_04) = "WHO-5: I woke up feeling fresh and rested"
-  comment(ds$C005_05) = "WHO-5: My daily life has been filled with things that interest me"
-  comment(ds$C006_01) = "Negative affect: I have felt particularly tense"
-  comment(ds$C006_02) = "Negative affect: I have felt lonely"
-  comment(ds$C006_03) = "Negative affect: I have felt downhearted and depressed"
-  comment(ds$C007_01) = "Trust: The news media"
-  comment(ds$C007_02) = "Trust: The police"
-  comment(ds$C007_03) = "Trust: Your country’s government"
-  comment(ds$C007_04) = "Trust: The European Union"
-  comment(ds$C007_05) = "Trust: The healthcare system"
+  comment(ds$C003_01) = "I am optimistic about my future"
+  comment(ds$C003_02) = "I am optimistic about my children's or grandchildren's future"
+  comment(ds$C003_03) = "I find it difficult to deal with important problems that come up in my life"
+  comment(ds$C003_04) = "When things go wrong in my life, it generally takes me a long time to get back to normal"
+  comment(ds$C004_01) = "Perceived health status"
+  comment(ds$C005_01) = "I have felt cheerful and in good spirits"
+  comment(ds$C005_02) = "I have felt calm and relaxed"
+  comment(ds$C005_03) = "I have felt active and vigorous"
+  comment(ds$C005_04) = "I woke up feeling fresh and rested"
+  comment(ds$C005_05) = "My daily life has been filled with things that interest me"
+  comment(ds$C006_01) = "I have felt particularly tense"
+  comment(ds$C006_02) = "I have felt lonely"
+  comment(ds$C006_03) = "I have felt downhearted and depressed"
+  comment(ds$C007_01) = "The news media"
+  comment(ds$C007_02) = "The police"
+  comment(ds$C007_03) = "Your country’s government"
+  comment(ds$C007_04) = "The European Union"
+  comment(ds$C007_05) = "The healthcare system"
   comment(ds$C008) = "Urbanisation"
   comment(ds$D001) = "Employment status"
-  comment(ds$D002) = "Lost job"
-  comment(ds$D003) = "Working hours"
-  comment(ds$D004_01) = "Work-life balance: Kept worrying about work when you were not working"
-  comment(ds$D004_02) = "Work-life balance: Felt too tired after work to do some of the household jobs which need to be done"
-  comment(ds$D004_03) = "Work-life balance: Found that your job prevented you from giving the time you wanted to your family"
-  comment(ds$D004_04) = "Work-life balance: Found it difficult to concentrate on your job because of your family responsibilities"
-  comment(ds$D004_05) = "Work-life balance: Found that your family responsibilities prevented you from giving the time you should to your job"
+  comment(ds$D002) = "Lost your job(s) or contract(s)"
+  comment(ds$D003) = "Any change in working hours"
+  comment(ds$D004_01) = "Kept worrying about work when you were not working"
+  comment(ds$D004_02) = "Felt too tired after work to do some of the household jobs which need to be done"
+  comment(ds$D004_03) = "Found that your job prevented you from giving the time you wanted to your family"
+  comment(ds$D004_04) = "Found it difficult to concentrate on your job because of your family responsibilities"
+  comment(ds$D004_05) = "Found that your family responsibilities prevented you from giving the time you should to your job"
   comment(ds$D005_01) = "Over the last 2 weeks, how often have you worked in your free time to meet work demands?"
-  comment(ds$D006_01) = "How frequently did you work from home before the outbreak of Covid-19?"
-  comment(ds$D007_01) = "Have you started to work from home as a result of the COVID-19 situation?"
-  comment(ds$D008_01) = "how likely or unlikely do you think it is that you might lose your job in the next 3 months?"
+  comment(ds$D006_01) = "Frequency of working from home before the outbreak"
+  comment(ds$D007_01) = "Started to work from home as a result of the situation"
+  comment(ds$D008_01) = "Do you think you might lose your job in the next 3 months?"
   comment(ds$E001_01) = "Is your household able to make ends meet?"
-  comment(ds$E002_01) = "Economising: Gone without fresh fruit and vegetables"
-  comment(ds$E002_02) = "Economising: Bought cheaper cuts of meat or bought less than wanted"
-  comment(ds$E003_01) = "Arrears: Rent or mortgage payments for accommodation"
-  comment(ds$E003_02) = "Arrears: Utility bills, such as electricity, water, gas"
-  comment(ds$E003_03) = "Arrears: Payments related to consumer loans, including credit card overdrafts (to buy electrical appliances, a car, furniture, etc.)"
-  comment(ds$E003_04) = "Arrears: Telephone, mobile or internet connection bills"
-  comment(ds$E003_05) = "Arrears: Payments related to informal loans from friends or relatives not living in your household"
-  comment(ds$E003_06) = "Arrears: Payments for healthcare or health insurance"
-  comment(ds$E004) = "Financial situation of household 3 months ago"
-  comment(ds$E005) = "Financial situation of household in 3 months"
-  comment(ds$E006) = "If your household would not receive any income, how long would your household be able to maintain the same standard of living using savings?"
-  comment(ds$E007_01) = "How likely or unlikely do you think it is that you will need to leave your accommodation within the next 6 months because you can no longer afford it?"
-  comment(ds$E008_01) = "Support: If you needed help around the house when ill"
-  comment(ds$E008_02) = "Support: If you needed advice about a serious personal or family matter"
-  comment(ds$E008_03) = "Support: If you needed help when looking for a job"
-  comment(ds$E008_04) = "Support: If you were feeling a bit depressed and wanting someone to talk to"
-  comment(ds$E008_05) = "Support: If you needed help in looking after your children"
-  comment(ds$E008_06) = "Support: If you needed help with shopping"
+  comment(ds$E002_01) = "Gone without fresh fruit and vegetables"
+  comment(ds$E002_02) = "Bought cheaper cuts of meat or bought less than wanted"
+  comment(ds$E003_01) = "Rent or mortgage payments for accommodation"
+  comment(ds$E003_02) = "Utility bills, such as electricity, water, gas"
+  comment(ds$E003_03) = "Payments related to consumer loans, including credit card overdrafts"
+  comment(ds$E003_04) = "Telephone, mobile or internet connection bills"
+  comment(ds$E003_05) = "Payments related to informal loans from friends or relatives not living in your household"
+  comment(ds$E003_06) = "Payments for healthcare or health insurance"
+  comment(ds$E004) = "Financial situation of household now compared to 3 months ago"
+  comment(ds$E005) = "Expected financial situation of household in 3 months"
+  comment(ds$E006) = "Without income, length of time household could maintain the same standard of living using savings"
+  comment(ds$E007_01) = "Think you will need to leave your accommodation within the next 6 months because you can no longer afford it"
+  comment(ds$E008_01) = "If you needed help around the house when ill"
+  comment(ds$E008_02) = "If you needed advice about a serious personal or family matter"
+  comment(ds$E008_03) = "If you needed help when looking for a job"
+  comment(ds$E008_04) = "If you were feeling a bit depressed and wanting someone to talk to"
+  comment(ds$E008_05) = "If you needed help in looking after your children"
+  comment(ds$E008_06) = "If you needed help with shopping"
   comment(ds$F001_01) = "Household size"
   comment(ds$F001_01a) = "Household size: Don\'t know/Prefer not to answer"
   comment(ds$F002_01) = "Partner"
@@ -402,6 +334,27 @@ get_respondent_data <- function(case) {
     
   }
   
-  return(ds)
+  
+  ### ----------------------- RECODES ------------------------------ ###
+  
+  #Create age groups
+  ds$age_group[ds$B003_01<35] <- "18-34"
+  ds$age_group[ds$B003_01>=35 & ds$B003_01<50] <- "35-49"
+  ds$age_group[ds$B003_01>=50] <- "50+"
+  ds$age_group <- factor(ds$age_group, levels=c("18-34","35-49","50+"), ordered=TRUE)
+  
+  #Recode employment status
+  ds$emp_stat  <- recode_factor(ds$D001,
+                                "Employee"  = "Employee",
+                                "Self-employed with employees" = "Self-employed",
+                                "Self-employed without employees" = "Self-employed",
+                                "Unemployed" = "Unemployed",
+                                "Retired" = "Retired",
+                                "Unable to work due to long-term illness or disability" = "Other",
+                                "Full-time homemaker/fulfilling domestic tasks" = "Other",
+                                "Student" = "Other") 
 
+  
+  return(ds)
+    
 }
