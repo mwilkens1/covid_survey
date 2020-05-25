@@ -1,3 +1,7 @@
+library(survey)
+library(weights)
+library(anesrake)
+
 weigh_data <- function(ds, minimum_weight, trim_lower, trim_upper) {
 
     ##Randomise third gender category and don't knows

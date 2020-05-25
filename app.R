@@ -16,15 +16,12 @@ library(lubridate)
 
 ###------------------------------PREPARATION--------------------------------###
 
-#setwd(paste0(getwd(),"/app_web"))
-
 #Minimun number of cases for a category to be shown
 threshold <- 100
 threshold_flag <- 200
 
 # This is the full dataset that is loaded into the server
-# This is the version of 28 April
-load("data/ds_0105.Rda")
+load("data/ds_merged.Rda")
 
 #renaming the weight variable
 ds <- ds %>% 

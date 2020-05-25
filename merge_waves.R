@@ -1,11 +1,14 @@
 ### ------------------ MERGE WAVES ---------------------- ###
 
+library(dplyr)
+library(rlist)
+
 #Loading in the wave 1 and wave 2 data
-load('data/ds_0105_full.Rda')
+load('data/ds_raw_wave1.Rda')
 ds_full_wave1 <- ds
 ds_full_wave1$wave <- 1
 
-load('data/ds_wave2_full.Rda')
+load('data/ds_raw_wave2.Rda')
 ds_full_wave2 <- ds
 ds_full_wave2$wave <- 2
 
@@ -13,11 +16,15 @@ rm(ds)
 
 # BECAUSE WAVE 2 IS NOT REALLY WAVE 2 AT THIS MOMENT I AM FAKING A FEW 
 # NEW VARIABLES AND REMOVING TWO FROM WAVE 1
-
+# THIS CAN BE REMOVED LATER
 ds_full_wave2 <- ds_full_wave2 %>%
   select(-C002_01, -D004_01) %>%#removing 2 variables
   mutate(random_numeric = runif(nrow(ds_full_wave2)), #numeric
          random_factor = as.factor(runif(nrow(ds_full_wave2))<0.5))
+
+# REMOVING OBSERVATIONS FROM WAVE 1 AND WAVE 2
+ds_full_wave1 <- ds_full_wave1[sample(nrow(ds_full_wave1), 85000), ]
+ds_full_wave2 <- ds_full_wave2[sample(nrow(ds_full_wave2), 85000), ]
 
 # The datasets differ have overlapping and non overlapping variables. 
 # so the mergeing should look like the table below where X are variables
@@ -45,7 +52,7 @@ stopifnot(nrow(ds_full_wave1) + nrow(ds_full_wave2) ==  nrow(ds_merged_full))
 unique_in_wave1 <- setdiff(colnames(ds_full_wave1), colnames(ds_full_wave2))
 unique_in_wave2 <- setdiff(colnames(ds_full_wave2), colnames(ds_full_wave1))
 overlapping <- intersect(colnames(ds_full_wave2), colnames(ds_full_wave1))
-
+ 
 # the number of columns sohuld be equal to unique in wave1 + unique in wave2 + interseting
 stopifnot(length(unique_in_wave1) + length(unique_in_wave2) + length(overlapping) == ncol(ds_merged_full))
 
@@ -53,14 +60,77 @@ sprintf("There are %s unique variables in wave 1: %s", length(unique_in_wave1), 
 sprintf("There are %s unique variables in wave 2: %s", length(unique_in_wave2), paste(unique_in_wave2, collapse=", "))
 sprintf("There are %s intersecting variables: %s", length(overlapping), paste(overlapping, collapse=", "))
 
-save(ds_merged_full, file="data/merged_full.rda")
+### ---------------------- LABEL AND RECODE ----------------------------- ###
+
+source("label_and_recode.R", local=TRUE)
+
+ds_merged_full <- label_and_recode(ds_merged_full)
+
+
+### ----------------------- WEIGHTING ------------------------------------ ###
+
+# weighting is done for each wave seperately
+
+source("weighting_by_country.R", local=TRUE)
+
+#This runs the weight 3 times
+weights_wave1 <- lapply(1:3, function(i) {
+  
+  weights <- ds_merged_full[ds_merged_full$wave==1,] %>% 
+    filter(clean==TRUE) %>%
+    weigh_data(minimum_weight = 0.05,
+               trim_lower = 0.16,
+               trim_upper = 6)
+  
+})
+
+#This checks if the weights are identical in each of the three runs
+stopifnot(weights_wave1[[1]]$w_country == weights_wave1[[2]]$w_country)
+stopifnot(weights_wave1[[2]]$w_country == weights_wave1[[3]]$w_country)
+
+#THis selects the weights of the first run
+weights_wave1 <- weights_wave1[[1]]
+weights_wave1$wave <- 1
+
+#Same for wave 2
+weights_wave2 <- lapply(1:3, function(i) {
+  
+  weights <- ds_merged_full[ds_merged_full$wave==2,] %>% 
+    filter(clean==TRUE) %>%
+    weigh_data(minimum_weight = 0.05,
+               trim_lower = 0.16,
+               trim_upper = 6)
+  
+})
+
+#This checks if the weights are identical in each of the three runs
+stopifnot(weights_wave2[[1]]$w_country == weights_wave2[[2]]$w_country)
+stopifnot(weights_wave2[[2]]$w_country == weights_wave2[[3]]$w_country)
+
+#This selects the weights of the first run
+weights_wave2 <- weights_wave2[[1]]
+weights_wave2$wave <- 2
+
+#Merging the two
+weights <- rbind(weights_wave1, weights_wave2)[,c("CASE","wave","w", "w_trimmed", "w_gross", "w_gross_trim")]
+
+#Saving the weights
+save(weights, file="data/weights.rda")
+
+#adding the weights to the data
+ds_merged_full <- left_join(ds_merged_full, weights, by=c("CASE","wave"))
+
+#saving the data
+save(ds_merged_full, file="data/ds_merged_full.rda")
 
 ### ----------------------- CREATING REFERENCE LIST ------------------------------ ###
 
 source("create_reference_list.R", local=TRUE)
+save(varinfo, file="data/varinfo.rda")
 
 ### ------------------ DROPPING VARIABLES --------------------------- ###
 
+# variable that are in the section 'other' in the varinfo file are dropped
 to_drop <- names(list.filter(varinfo, section=='other'))
 
 #Removing unclean and unweighted cases
@@ -69,13 +139,9 @@ ds <- ds_merged_full %>%
   select(-one_of(to_drop)) %>%
   droplevels()
 
-### ----------------------- SAVING FILES FOR APPS ------------------------------ ###
+### ----------------------- SAVING MERGED FILE ------------------------------ ###
 
-save(ds_full_wave1, file="data/ds_0105.Rda")
-save(ds_full_wave2, file="data/ds_wave2.Rda")
 save(ds, file="data/ds_merged.Rda")
-
-save(varinfo, file="data/varinfo.rda")
 
 ### ----------------------- PREPARE MAP ------------------------------ ###
 
@@ -87,3 +153,4 @@ shp_20$NAME_ENGL <- droplevels(shp_20$NAME_ENGL)
 shp_20$Country <- shp_20$NAME_ENGL
 
 save(shp_20, file = "data/shp_20.rda")
+
