@@ -207,11 +207,13 @@ ui <- fluidPage(
       
       fluidRow(
         column(width=3,
+               hidden(
                pickerInput(inputId = "time", 
                            label = "Period",
                            choices = list("April/May"="1", "June/July"="2", "All (compare)"="0"),
                            selected = "2",
                            width = "100%")
+               )
                
         ),
         
@@ -789,12 +791,12 @@ server <- function(input, output, session) {
         
         if (query[["unhide"]]=="true") {
              
-             show("education_filter")
-             show("empstat_filter")
-             
-             updatePickerInput(session,inputId="breakdown",
-                               choices = breakdown_list)
-        
+           shinyjs::show("education_filter")
+           shinyjs::show("empstat_filter")
+           
+           updatePickerInput(session,inputId="breakdown",
+                             choices = breakdown_list)
+      
          }
       }
       
@@ -818,10 +820,20 @@ server <- function(input, output, session) {
                                          choicesOpt = list(subtext = subtexts))
       updatePickerInput(session, "breakdown", selected = query[["breakdown"]])
       
+      if (is.null(query[["IigtHmB"]])) {
+        
+        shinyjs::show("time")
+        
+      }
+      
       # Always show bar if in benchmark mode
+      # And always show april / may data
+      # NOTE: THIS MAY NEED TO BE UPDATED IN CASE OF BENCHMARKING WAVE 2
+      
       if (!is.null(query[["IigtHmB"]])) {
       
         updatePickerInput(session, "chart_type", selected = "Bar")
+        updatePickerInput(session, "time", selected = "1")
       
         #If not in benchmark mode, select what it in the parameter
       } else { 
