@@ -1,7 +1,7 @@
-library(shiny)
-library(plotly)
-library(shinyWidgets)
-library(shinycssloaders)
+library(shiny) 
+library(plotly) 
+library(shinyWidgets) 
+library(shinycssloaders) 
 library(shinythemes)
 library(dplyr)
 library(purrr)
@@ -179,7 +179,7 @@ ui <- fluidPage(
      fluidRow( #Top fluid row
         
         #Question selection
-        column(width=12, #Spanning across, which is the width of the window or the iframe
+        column(width=9, #Spanning across, which is the width of the window or the iframe
                
              pickerInput(inputId = "var", #the id the server uses to refer to this input
                          label = "Select question", 
@@ -190,11 +190,7 @@ ui <- fluidPage(
                          choicesOpt = list(subtext = get_subtexts(sections)),
                          options = list(size = 25),
                          width = "100%")
-          )
-      
-      ),
-      
-      fluidRow(
+          ),
         
         column(width=3,
                
@@ -203,8 +199,21 @@ ui <- fluidPage(
                            label = "By",
                            choices = breakdown_list[1:3],
                            width = "100%")
-                           
-               ),
+               
+        )
+        
+      
+      ),
+      
+      fluidRow(
+        column(width=3,
+               pickerInput(inputId = "time", 
+                           label = "Period",
+                           choices = list("April/May"="1", "June/July"="2", "All (compare)"="0"),
+                           selected = "2",
+                           width = "100%")
+               
+        ),
         
         column(width=6,
                
@@ -213,14 +222,14 @@ ui <- fluidPage(
                # to the variable selected. 
                uiOutput("cat_selector")
                
-        ),
-        
+              ),
+          
         column(width=3,
                
                #Conditional panel that lets you choose map or bar
                #It only shows up if country is selected as breakdown
                conditionalPanel(
-                 condition = "input.breakdown == 'B001'",
+                 condition = "input.breakdown == 'B001' & input.time != '0'",
                  pickerInput(inputId = "chart_type", label = "Chart type", 
                              choices = c("Map","Bar"),
                              selected = "Map",
@@ -245,7 +254,7 @@ ui <- fluidPage(
                #This shows the plot or map (see server)  
                uiOutput('plot_ui')
                
-        )
+          )
       ),
       
       fluidRow(style="margin-top: 10px",
@@ -379,7 +388,7 @@ server <- function(input, output, session) {
         } else {
           
           source("secrets.R")
-          source("get_data_from_api.R")
+          source("wave1/get_data_from_api.R")
           source("label_and_recode.R")
           
           #Create quuery to API with &cases=casnumber
@@ -486,6 +495,18 @@ server <- function(input, output, session) {
       
     })
   
+    # Force the choice of plot to be bar when comparing multiple categories
+    # We cannot show a map when comparing time periods
+    observeEvent(input$time, {
+      
+      if (input$time=="0") {
+        
+        updatePickerInput(session, "chart_type", selected = "Bar")
+        
+      } 
+      
+    })
+    
     # Because the available categories are dependent on the inputvariable, R shiny does:
     # inputvar change -> run data + plot + update categories -> run data + plot 
     # The first step is triggered by the inputvariable change and the second step
@@ -497,9 +518,9 @@ server <- function(input, output, session) {
     #Reactive value saying that the categories have not been updated
     #This variable is used later on by requiring that it is TRUE for the data and plot
     #functions to be run.
-    cats_updated <- reactiveVal(FALSE)
+    updated <- reactiveVal(FALSE)
     #In case of a change in the selected categories, flag the variable to TRUE
-    observeEvent(input$cat_sel, cats_updated(TRUE))
+    observeEvent(input$cat_sel, updated(TRUE))
     #In case of an input variable change...
     observeEvent(input$var, {
       
@@ -509,10 +530,23 @@ server <- function(input, output, session) {
           # as the categories of the last variable selected ...
           sum(input$cat_sel %in% varinfo[[input$var]]$levels)>0 ) 
       # Set updated variable to true, and if not keep it to false
-      {cats_updated(TRUE)} else {cats_updated(FALSE)}}
+      {updated(TRUE)} else {updated(FALSE)}}
       #In the second round the condition will apply and it will be set to TRUE
       
     )
+    
+    #Same idea but then for a switch in the time period selected
+    #When you go from map in one time period to mulitple time periods it will
+    #automatically switch to bar chart. However, it briefly shows a map first because of the loop
+    #this avoids that problem. 
+    observeEvent(input$chart_type, if(input$time=="0") {updated(TRUE)})
+    observeEvent(input$time,{
+      
+      #in case map is selected and also both time periods
+      if(input$chart_type=="Map" & input$time=="0") {updated(FALSE)}
+      
+    })
+    
     
     #Reactive value to show that the data has been updated. 
     #If the data has not been updated the dowload button and the copy link button should
@@ -525,17 +559,17 @@ server <- function(input, output, session) {
     data <- reactive({
 
       #Requires the the category selection has been updated
-      req(cats_updated())
+      req(updated())
       #Sets the data updated variable to false
       data_updated(FALSE)
       #Runs the make data function
       data <- make_data(input$var, input$breakdown, input$cat_sel, 
                            input$gender_filter, input$age_filter, input$education_filter, 
-                           input$country_filter, input$empstat_filter, threshold)
+                           input$country_filter, input$empstat_filter, threshold, input$time)
       #Sets the data updated to TRUE. This step does not occur if one of the conditions
       #specified in the make_data function are not met (see validates in make_data)
       data_updated(TRUE)
-    
+     
       return(data)
       
       })
@@ -543,9 +577,9 @@ server <- function(input, output, session) {
     # Calling the make_plot and make_map function for each tab
     # Both functions are in a seperate R file
     output$map  <- renderLeaflet({
-      
+
       #Also require the categories to be updated
-      req(cats_updated())
+      req(updated())
       #Call the make_map function with the data created
       make_map(data(), input$isMobile)
       
@@ -553,7 +587,7 @@ server <- function(input, output, session) {
     
     output$plot <- renderPlotly({
       
-      req(cats_updated())                                  
+      req(updated())                                  
       make_plot(data(), input$isMobile)
       
      })
@@ -640,7 +674,29 @@ server <- function(input, output, session) {
         
              filename = 'EF_data.csv',
              content = function(con) {
-               df <- data()[[1]]
+               
+               #Determine the number of periods in the data
+               periods <- length(data())
+
+               if (periods==1) {#If only 1 time period
+                
+                 #Data is the first element of the first and only list
+                 df <- data()[[1]][[1]]
+               
+               } else {#If multiple time periods
+                 
+                 data_1 <- data()[[1]][[1]]
+                 data_1$period <- data()[[1]][[7]]
+                 data_2 <- data()[[2]][[1]]
+                 data_2$period <- data()[[2]][[7]]
+                 
+                 #this merges the datasets by adding rows
+                 df <- rbind(data_1, data_2) %>%
+                   droplevels()
+                 
+
+               }
+               
                
                # Removing commas from the data for the download data function
                colnames(df) <- gsub(",", "_", colnames(df))
@@ -665,7 +721,7 @@ server <- function(input, output, session) {
                  #Change some wording
                  gsub("The figure shows", "The data show", .)
                
-               #Writing the data plus surrounding text
+               #Writing the data plus surrounding text to the file
                write(title, file=con)
                
                write(description,file=con, append=TRUE)
@@ -680,8 +736,7 @@ server <- function(input, output, session) {
                
                write("",file=con, append=TRUE)
                
-               write(paste0('"',"Cite as: Eurofound (2020), Living, 
-                            working and COVID-19 dataset, Dublin, http://eurofound.link/covid19data",'"'),
+               write(paste0('"',"Cite as: Eurofound (2020), Living, working and COVID-19 dataset, Dublin, http://eurofound.link/covid19data",'"'),
                      file=con, append=TRUE)
                
              }
@@ -775,6 +830,12 @@ server <- function(input, output, session) {
       
       }
       
+      if (!is.null(query[["time"]])) {
+        
+        updatePickerInput(session, "time", selected = query[["time"]])
+        
+      }
+      
       
       #Update filters. These are not dependent on the tabs
       for (filter in c("country_filter","empstat_filter")) {
@@ -847,7 +908,8 @@ server <- function(input, output, session) {
     paste_parameters <- function(inputvar,inputvar_label,
                                  cat_sel,cat_sel_label,
                                  breakdown,breakdown_label,
-                                 chart_type,chart_type_label) {
+                                 chart_type,chart_type_label,
+                                 time,time_label) {
       
       paste0(
         
@@ -855,6 +917,11 @@ server <- function(input, output, session) {
         
         make_multiple_parameter(cat_sel,cat_sel_label),
         
+        #if selected time is not the default (2: June/July)
+        {if (time!=2)
+          #Then make the parameter
+          make_parameter(time,time_label)
+        },
         { if (breakdown!="B001") 
           make_parameter(breakdown,breakdown_label)
         },
@@ -912,7 +979,8 @@ server <- function(input, output, session) {
       parameters <- paste_parameters(input$var,"var",
                                      input$cat_sel,"cat_sel",
                                      input$breakdown,"breakdown",
-                                     input$chart_type,"chart_type")
+                                     input$chart_type,"chart_type",
+                                     input$time, "time")
         
       #Remove the first &
       parameters <- substr(parameters,2,nchar(parameters))

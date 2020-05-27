@@ -1,9 +1,14 @@
 make_map <- function(data, mobile) {
-  
-  #Variable class
-  class <- data[[2]]
-  #The dataframe
-  data <- data[[1]]
+
+  # Variable class
+  # Data is a list of lists (see make data)
+  # this takes the second element of the first list: the class
+  # the map is only showing if there is only 1 time period selected so the
+  # list will always only have 1 list in it for maps. (not for plots, see make_plot)
+  class <- data[[1]][[2]]
+  # this takes the first element of the first list: the dataset
+  # The dataframe
+  data <- data[[1]][[1]]
   
   #Setting the axis label depending on the type of variable
   if (class=="numeric") {x_label <- "Mean"} else {x_label <- "%"}

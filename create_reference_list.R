@@ -421,4 +421,3 @@ for (var in num_vars) {
   varinfo[[var]]$default_levels <- "None"
   
 }
-

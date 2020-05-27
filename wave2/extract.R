@@ -18,15 +18,5 @@ source("wave2/get_data_from_api.R")
 
 ds <- get_data_from_api(ds_file)
 
-#Cleaning the data
-source("wave2/Cleaning_simple.R", local = TRUE)
-
-ds <- ds %>%
-  left_join(ds_clean[c("CASE","clean")], by="CASE")
-
-ds$clean[is.na(ds$clean)] <- FALSE
-
-table(ds$clean)
-
 #Saving the raw data + indicator for cleaning
 save(ds, file="data/ds_raw_wave2.Rda")

@@ -2,6 +2,8 @@
 
 library(dplyr)
 library(rlist)
+library(foreign)
+library(haven)
 
 #Loading in the wave 1 and wave 2 data
 load('data/ds_raw_wave1.Rda')
@@ -67,10 +69,31 @@ source("label_and_recode.R", local=TRUE)
 ds_merged_full <- label_and_recode(ds_merged_full)
 
 
+### ---------------------- CLEANING ----------------------------- ###
+
+#Loading both screening scripts
+source("wave1/cleaning.R", local = TRUE)
+source("wave2/cleaning.R", local = TRUE)
+
+#Running the cleaning for each wave seperately because they are based on 
+#different rules
+ds_clean1 <- cleaning_wave1(ds_merged_full[ds_merged_full$wave==1,])
+ds_clean1$wave <- 1
+ds_clean2 <- cleaning_wave2(ds_merged_full[ds_merged_full$wave==2,])
+ds_clean2$wave <- 2
+
+ds_clean <- rbind(ds_clean1,ds_clean2)
+
+ds_merged_full <- ds_merged_full %>%
+  left_join(ds_clean[c("CASE","clean","wave")], by=c("CASE","wave"))
+
+ds_merged_full$clean[is.na(ds_merged_full$clean)] <- FALSE
+
+table(ds_merged_full$clean)
+
 ### ----------------------- WEIGHTING ------------------------------------ ###
 
 # weighting is done for each wave seperately
-
 source("weighting_by_country.R", local=TRUE)
 
 #This runs the weight 3 times
@@ -122,10 +145,13 @@ ds_merged_full <- left_join(ds_merged_full, weights, by=c("CASE","wave"))
 
 #saving the data
 save(ds_merged_full, file="data/ds_merged_full.rda")
+write.dta(ds_merged_full, "data/ds_merged_full.dta")
+write_sav(ds_merged_full, "data/ds_merged_full.sav")
 
 ### ----------------------- CREATING REFERENCE LIST ------------------------------ ###
 
-source("create_reference_list.R", local=TRUE)
+source("create_reference_list.R", local=TRUE, encoding="utf-8")
+
 save(varinfo, file="data/varinfo.rda")
 
 ### ------------------ DROPPING VARIABLES --------------------------- ###

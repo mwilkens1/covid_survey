@@ -196,21 +196,62 @@ make_question_description <- function(inputvar) {
 }
 
 
+
+
 make_excluded_text <- function(data) {
+
+  # Variable of the number of time periods 
+  # The exclusions can be differen tin each wave of the survey
+  periods <- length(data)  
   
-  excluded <- data[[3]]
   
-  text <- "Excluded due to insufficient data: "
   
-  for (c in excluded) {
+  if (periods==1) {
+  
+    #If only one period, the excluded categories are the third element of the first list
+    excluded <- data[[1]][[3]]  
     
-    text <- paste0(text, c, ", ")
+    text <- paste("Excluded due to insufficient data:",paste(excluded, collapse=", "))
+    text <- paste0(text,".")
+    if (length(excluded)==0) {text <- NULL}
+
+  } else {
     
+    excluded_1 <- data[[1]][[3]]  
+    excluded_2 <- data[[2]][[3]]  
+
+    excluded_both  <- intersect(excluded_1, excluded_2)
+    excluded_1only <- setdiff(excluded_1, excluded_2)
+    excluded_2only <- setdiff(excluded_2, excluded_1)
+    
+    text <- ""
+    
+    if (length(excluded_both)>0) {
+      text <- paste(text,"Excluded due to insufficient data in both periods:",paste(excluded_both, collapse=", "))
+      text <- paste0(text,".")
+    }
+    
+    if (length(excluded_1only)>0) {
+      
+      text <- paste(text, "Excluded due to insufficient data in April/May:", paste(excluded_1only, collapse=", "))
+      text <- paste0(text,".")
+      
+    }
+    
+    if (length(excluded_2only)>0) {
+      
+      text <- paste(text, "Excluded due to insufficient data in June/July:", paste(excluded_2only, collapse=", "))
+      text <- paste0(text,".")
+      
+    }
+    
+    if (length(excluded_both)==0 & length(excluded_1only)==0 & length(excluded_2only)==0) {
+      
+      text <- NULL  
+      
+    } 
+  
   }
-  
-  text <- paste0(substr(text,1,nchar(text)-2),".")
-  
-  if (length(excluded)==0) text <- NULL
   
   return(text)
   
@@ -221,42 +262,93 @@ make_excluded_text <- function(data) {
 
 make_low_reliability_description <- function(data) {
   
-  list <- data[[6]]
+  # Variable of the number of time periods 
+  # The exclusions can be different in each wave of the survey
+  periods <- length(data)
   
-  if (length(list)!=0) {
+  if (periods==1) {
     
-    if (length(list)==1) {
-      
-      text <- paste0(list,".")
-      
-    } else {
+    list <- data[[1]][[6]]
     
-      text <- ""
+    if (length(list)!=0) {
       
-      for (cat in list) {
+      if (length(list)==1) {
         
-        if (cat==list[length(list)-1]) {
+        text <- paste0(list,".")
+        
+      } else {
+        
+        text <- ""
+        
+        for (cat in list) {
           
+          if (cat==list[length(list)-1]) {
+            
             text <- paste0(text,cat," and ")
-          
-        } else {
-          
+            
+          } else {
+            
             text <- paste0(text,cat,", ")
-        
+            
+          }
+          
         }
         
+        substr(text,nchar(text)-1,nchar(text)) <- "."
+        
       }
-
-      substr(text,nchar(text)-1,nchar(text)) <- "."
-          
-    }
       
-    text <- paste("Low reliability (*): ",text)
+      text <- paste("Low reliability (*): ",text)
+      
+    } else {
+      
+      text <- NULL
+      
+    }
     
   } else {
     
-    text <- NULL
+    low_rel_1 <- data[[1]][[6]]
+    low_rel_2 <- data[[2]][[6]]
+    
+    lr_both  <- intersect(low_rel_1, low_rel_2)
+    lr_1only <- setdiff(low_rel_1, low_rel_2)
+    lr_2only <- setdiff(low_rel_2, low_rel_1)
+    
+    text <- ""
+    
+    if (length(lr_both)>0) {
+      
+      text <- paste(text,"Low reliability (*) in both periods:",paste(lr_both,collapse=", "))
+      text <- paste0(text,".")
+       
+    }
+    
+    if (length(lr_1only)>0) {
+
+      text <- paste(text,"Low reliability (*) in April/May:",paste(lr_1only,collapse=", "))
+      text <- paste0(text,".")
+      
+    }
+    
+    if (length(lr_2only)>0) {
+      
+      text <- paste(text,"Low reliability (*) in June/July:",paste(lr_2only,collapse=", "))
+      text <- paste0(text,".")
+      
+    }
+    
+    if (length(lr_both)==0 & length(lr_1only)==0 & length(lr_2only)==0) {
+      
+      text <- NULL
+      
+    }
+    
+    return(text)
     
   }
+  
+  
+  
   
 }
