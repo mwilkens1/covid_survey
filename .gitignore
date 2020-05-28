@@ -3,10 +3,7 @@
 .RData
 .Ruserdata
 secrets.R
-ds.Rda
-ds_2804.Rda
-ds_3004.Rda
-ds_0105.Rda
 **/rsconnect/
 /data
 appFileManifest.txt
+deploy.R

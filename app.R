@@ -937,7 +937,7 @@ server <- function(input, output, session) {
         { if (breakdown!="B001") 
           make_parameter(breakdown,breakdown_label)
         },
-        { if (chart_type!="Map")
+        { if (chart_type!="Map" & time!=0)
           
           make_parameter(chart_type,chart_type_label)
           
