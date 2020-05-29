@@ -7,3 +7,4 @@ secrets.R
 /data
 appFileManifest.txt
 deploy.R
+*.docx
