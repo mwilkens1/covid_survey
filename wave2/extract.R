@@ -12,7 +12,7 @@ library(dplyr)
 # FOR NOW WE PRETEND WAVE 1 IS WAVE 2
 
 source("secrets.R")
-ds_file = paste0("https://s2survey.net/eurofound/?act=", token)
+ds_file = paste0("https://s2survey.net/eurofound/?act=", token2)
 
 source("wave2/get_data_from_api.R")
 

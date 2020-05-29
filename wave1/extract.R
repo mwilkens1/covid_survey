@@ -9,7 +9,7 @@ library(dplyr)
 # API link of the SocSci database of the Eurofound survey. API token is confidential and stored in secrets file.
 
 source("secrets.R")
-ds_file = paste0("https://s2survey.net/eurofound/?act=", token)
+ds_file = paste0("https://s2survey.net/eurofound/?act=", token1)
 
 source("wave1/get_data_from_api.R")
 
