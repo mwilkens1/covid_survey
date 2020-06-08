@@ -61,38 +61,40 @@ EF_colours <- list("#0D95D0", "#7DC462", "#E72F52", "#774FA0", "#EFB743", "#D446
 #Creating lists of variable names and labels for the question selection
 sections <- c("Quality of life","Work and teleworking","Financial situation")
 
-variables <- lapply(sections, function(s) {
+# Function to make a list of variables for the dropdown 'question'. 
+# This also excludes variables not meant in the benchmark if benchmark mode is active
+make_variable_list <- function(sections, benchmark) {
+  
+  variables <- lapply(sections, function(s) {
+ 
+   labels <- list.filter(varinfo, section==s) %>%  
+     {if (benchmark==1) list.filter(.,benchmark==1) else .} %>%
+     list.mapv(label, use.names = FALSE)
+   
+   names <- as.list(names(list.filter(varinfo, section==s) %>%
+                            {if (benchmark==1) list.filter(.,benchmark==1) else .}))
+   
+   names(names) <- labels
+   
+   return(names)
+   
+ })
 
-  labels <- list.filter(varinfo, section==s) %>%  list.mapv(label, use.names = FALSE)
+ names(variables) <- sections
+ 
+ return(variables)
   
-  names <- as.list(names(list.filter(varinfo, section==s)))
-  
-  names(names) <- labels
-  
-  return(names)
-  
-})
-
-names(variables) <- sections
-
-#Creating lists of subtexts for each question
-subtexts <- lapply(sections, function(s) {
-  
-  subtexts <- list.filter(varinfo, section==s) %>%  list.mapv(subtext, use.names = FALSE)
-  
-  names <- as.list(names(list.filter(varinfo, section==s)))
-  
-  names(names) <- subtexts
-  
-  return(names)
-  
-})
-
-names(subtexts) <- sections
+}
 
 # Because a vector is required for the subtexts, we need to extract the subtexts
 # from the lists given a particular section.
-get_subtexts <- function(sections) {
+# this is a function for that which also excludes any variables not meant for the 
+# benchmark if benchmark mode is enabled
+get_subtexts <- function(sections, benchmark) {
+  
+    if (benchmark==1) {
+      varinfo <- list.filter(varinfo, benchmark==1)
+    }
   
     lapply(sections, function(s) {
       
@@ -136,6 +138,7 @@ mobileDetect <- function(inputId, value = 0) {
 
 # Styling for the benchmark text
 benchmark_text_style <- "style='font-size:20px;'"
+
 
 ###----------------------------------UI----------------------------------###
 ui <- fluidPage(
@@ -181,15 +184,18 @@ ui <- fluidPage(
         #Question selection
         column(width=9, #Spanning across, which is the width of the window or the iframe
                
-             pickerInput(inputId = "var", #the id the server uses to refer to this input
-                         label = "Select question", 
-                         # 3 lists of variables per section. Our 3 pages are set up such that with a 
-                         # URL paramter one of these lists is chosen and you will see all three if you 
-                         # run it independent from the 
-                         choices = variables, 
-                         choicesOpt = list(subtext = get_subtexts(sections)),
-                         options = list(size = 25),
-                         width = "100%")
+             # pickerInput(inputId = "var", #the id the server uses to refer to this input
+             #             label = "Select question", 
+             #             # 3 lists of variables per section. Our 3 pages are set up such that with a 
+             #             # URL paramter one of these lists is chosen and you will see all three if you 
+             #             # run it independent from the 
+             #             choices = variables, 
+             #             choicesOpt = list(subtext = get_subtexts(sections)),
+             #             options = list(size = 25),
+             #             width = "100%")
+             
+             uiOutput("var_selector")
+             
           ),
         
         column(width=3,
@@ -408,6 +414,48 @@ server <- function(input, output, session) {
       
     })
 
+    variables <- reactive({
+      
+      if (is.null(query()[["id"]])) {
+        
+        make_variable_list(sections, benchmark=0)
+        
+      } else {#But if in benchmark mode, select only the variables with benchmark=1 in varinfo
+      
+        make_variable_list(sections, benchmark=1)
+        
+      }
+      
+    })
+    
+    subtexts <- reactive({
+      
+      if (is.null(query()[["id"]])) {
+        
+        get_subtexts(sections, 0)
+        
+      } else {
+        
+        get_subtexts(sections, 1)
+        
+      }
+      
+    })
+    
+    output$var_selector <- renderUI({
+      
+      pickerInput(inputId = "var", #the id the server uses to refer to this input
+                  label = "Select question", 
+                  # 3 lists of variables per section. Our 3 pages are set up such that with a 
+                  # URL paramter one of these lists is chosen and you will see all three if you 
+                  # run it independent from the 
+                  choices = variables(), 
+                  choicesOpt = list(subtext = subtexts()),
+                  options = list(size = 25),
+                  width = "100%")
+        
+    })
+    
     
     benchmark_text <- function(inputvar) {
       
@@ -437,7 +485,16 @@ server <- function(input, output, session) {
       
     }
     
-    output$benchmark_text <- renderText(benchmark_text(input$var))
+    output$benchmark_text <- renderText({
+      
+      #require that this output is rendered only if there is an input variable
+      #we are creating the input for the question at the server end so this variable is
+      #not available initially. So this is to prevent a temporary error
+      req(input$var)
+      
+      benchmark_text(input$var)
+      
+      })
     
     # Creating te dropdown for selecting categories.
     # This dropdown only shows if its a factor variable. 
@@ -445,6 +502,11 @@ server <- function(input, output, session) {
     # to the variable selected and therefore only the categories beloning to 
     # that particular question should be shown. 
     output$cat_selector <-  renderUI({
+      
+      #require that this output is rendered only if there is an input variable
+      #we are creating the input for the question at the server end so this variable is
+      #not available initially. So this is to prevent a temporary error
+      req(input$var)
       
       #First, check if any paramters have been defined in the URL because
       #they should supersede anything else.
@@ -791,13 +853,24 @@ server <- function(input, output, session) {
       # if section parameter is specified
       if (!is.null(query[["section"]])) {
         
-        choices_var <- variables[[query[["section"]]]]
-        subtexts <-    get_subtexts(query[["section"]])
+        choices_var <- variables()[[query[["section"]]]]
+        
+        
+        if (is.null(query()[["id"]])) {
+          
+          subtexts <- get_subtexts(query[["section"]], 0)
+          
+        } else {
+          
+          subtexts <- get_subtexts(query[["section"]], 1)
+          
+        }
+      
         
       } else {
         
-        choices_var <- variables
-        subtexts <- get_subtexts(sections)
+        choices_var <- variables()
+        subtexts <- subtexts()
         
       }
       

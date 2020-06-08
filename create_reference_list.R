@@ -29,15 +29,19 @@ varinfo <- lapply(colnames(ds_merged_full), function(x) {
     default_levels = NULL,
     
     # Special axis range for numerical variables
-    range = NULL
+    range = NULL,
+    
+    # indicates in which wave the variable is featured in benchmark
+    # This should be the wave 1 variables!
+    # By default all are included
+    # see below: change to 0 if you want to exclude a variable
+    benchmark = 1
     
   )
   
 })
 
 names(varinfo) <- colnames(ds_merged_full)
-
-
 
 ###FAKE VARIABLES ###
 
@@ -51,7 +55,6 @@ varinfo[["random_numeric"]]$section <- "Work and teleworking"
 varinfo[["random_numeric"]]$subtext <- "Fake"
 varinfo[["random_numeric"]]$question <- "What is the fake random number?"
 varinfo[["random_numeric"]]$label <- "Random numeric variable"
-
 
 # Define labels
 
@@ -421,3 +424,15 @@ for (var in num_vars) {
   varinfo[[var]]$default_levels <- "None"
   
 }
+
+# Define variables for benchmark
+
+#NOTE THIS IS FOR TESTING PURPOSES, SO CHANGE LATER
+
+for (var in c("C005_01","C005_02","C005_03","C005_04","C005_05")) {
+  
+  varinfo[[var]]$benchmark <- 0
+  
+}
+
+

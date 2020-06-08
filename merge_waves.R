@@ -46,6 +46,11 @@ ds_full_wave2 <- ds_full_wave2[sample(nrow(ds_full_wave2), 85000), ]
 # someone who gave their email for wave 1 and filled out the survey again. 
 # For case 1, variables y1, y2 and y3 can be compared over time.
 
+
+### RECODE VARIABLE NAMES!!!
+
+###
+
 ds_merged_full <- full_join(ds_full_wave1, ds_full_wave2)
 
 # the number of rows should be equal to the sum of the number of rows in both dataframes

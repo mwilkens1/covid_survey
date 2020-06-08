@@ -7,13 +7,15 @@
 source("secrets.R")
 ds_file = paste0("https://s2survey.net/eurofound/?act=", token1)
 
+#This is different in the dashboard. THe dashboard is pulling data from the API while being on the shinyapps.io server
+#The logs showed an issue with the certificates. This is to cicrumvent that issue (an R-studio helpdesk provided me with this)
 library(curl)
 h <- new_handle()
 handle_setopt(h, ssl_verifypeer = 0);
 
 # Reading in the data. 
 ds = read.table(
-  file=curl(ds_file,handle=h), 
+  file=curl(ds_file,handle=h), #ALSO HERE IT IS DIFFERENT, KEEP THIS OTHERWISE YOU WILL GET AN ERROR
   encoding="UTF-8",
   header = FALSE, sep = "\t", quote = "\"",
   dec = ".", #row.names = "CASE",
