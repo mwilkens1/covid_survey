@@ -28,6 +28,7 @@ This repository contains the following files:
 * (/wave1 and /wave2) extract.R: script for pulling the data from the API
 * (/wave1 and /wave2) get_data_from_API.R: helper function for pulling the data from the API.
 * /shapefiles: folder containing the shapefiles for the map used in the visualisation. 
+* /dashboard: contains files for a seperate app tracking the survey response while open
 
 The data folder is not included in this Github repository because the data is not (yet) public.
 

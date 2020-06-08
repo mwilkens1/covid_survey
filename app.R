@@ -374,16 +374,19 @@ server <- function(input, output, session) {
     # This downloads the data from the respondent who has opened the app in benchmark mode
     respondent_data <- reactive({
       
-      # If benchmark the parameter IigtHmB will appear with a case number
-      case <- query()[["IigtHmB"]]
-
-      # If there is a ?IigtHmB parameter, get the data from the dataset 
+      # If benchmark the parameter id will appear with a case number
+      hash <- query()[["id"]]
+     
+      # If there is a ?id parameter, get the data from the dataset 
       # or download the data from the API
-      if (!is.null(case)) {
+      if (!is.null(hash)) {
         
-        if (case %in% ds$CASE) {
-
-          return(ds[ds$CASE==as.character(case),])
+        if (hash %in% ds$F021) {
+          
+          respondent_data <- ds %>%
+            filter(F021==hash & wave==1)
+          
+          return(respondent_data)
           
         } else {
           
@@ -392,7 +395,7 @@ server <- function(input, output, session) {
           source("label_and_recode.R")
           
           #Create quuery to API with &cases=casnumber
-          data <- paste0("https://s2survey.net/eurofound/?act=", token1,"&cases=",case) %>%
+          data <- paste0("https://s2survey.net/eurofound/?act=", token1,"&cases=",hash) %>%
             get_data_from_api() %>% #Query the API  
             label_and_recode() #Recode the data
           
@@ -456,7 +459,7 @@ server <- function(input, output, session) {
         
       
         #If in benchmark mode, show all categories  
-      } else if (!is.null(query()[["IigtHmB"]])) {
+      } else if (!is.null(query()[["id"]])) {
         
         selected <- varinfo[[input$var]]$levels
         
@@ -804,7 +807,7 @@ server <- function(input, output, session) {
                                          choicesOpt = list(subtext = subtexts))
       updatePickerInput(session, "breakdown", selected = query[["breakdown"]])
       
-      if (is.null(query[["IigtHmB"]])) {
+      if (is.null(query[["id"]])) {
         
         shinyjs::show("time")
         
@@ -814,7 +817,7 @@ server <- function(input, output, session) {
       # And always show april / may data
       # NOTE: THIS MAY NEED TO BE UPDATED IN CASE OF BENCHMARKING WAVE 2
       
-      if (!is.null(query[["IigtHmB"]])) {
+      if (!is.null(query[["id"]])) {
       
         updatePickerInput(session, "chart_type", selected = "Bar")
         updatePickerInput(session, "time", selected = "1")
